@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Interface - Player Status</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap');
+
+        :root {
+            --bg-color: #050914;
+            --panel-bg: rgba(12, 20, 36, 0.85);
+            --primary-glow: #00f0ff;
+            --secondary-glow: #7000ff;
+            --danger: #ff3366;
+            --text-main: #e0f7fa;
+            --text-muted: #4a6b8c;
+            --border-color: #1a365d;
+            
+            /* Ranks */
+            --rank-s: #ffd700;
+            --rank-a: #ff3366;
+            --rank-b: #7000ff;
+            --rank-c: #00f0ff;
+            --rank-d: #4a6b8c;
+            --rank-e: #1a365d;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Rajdhani', sans-serif;
+            margin: 0;
+            padding: 10px;
+            background-image: radial-gradient(circle at 50% 0%, #101b3b 0%, #050914 70%);
+            min-height: 100vh;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Orbitron', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 0;
+        }
+        
+        h1 { text-shadow: 0 0 10px var(--primary-glow); text-align: center; font-size: 1.5rem; margin-bottom: 20px;}
+        h2 { color: var(--primary-glow); font-size: 1.2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; margin-bottom: 15px;}
+
+        /* Layout */
+        .wrapper { max-width: 1000px; margin: 0 auto; }
+        
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.05), inset 0 0 20px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            margin-bottom: 20px;
+        }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr; gap: 20px; }
+        @media (min-width: 768px) {
+            .grid-2 { grid-template-columns: 1fr 1fr; }
+            h1 { font-size: 2rem; }
+            body { padding: 20px; }
+        }
+
+        /* Navigation Tabs */
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn {
+            background: rgba(0,0,0,0.5);
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+            padding: 10px 15px;
+            font-family: 'Orbitron', sans-serif;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: 0.3s;
+            flex: 1;
+            min-width: 100px;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .nav-btn.active {
+            color: var(--bg-color);
+            background: var(--primary-glow);
+            box-shadow: 0 0 15px var(--primary-glow);
+            border-color: var(--primary-glow);
+            font-weight: bold;
+        }
+
+        .tab-content { display: none; animation: fadeIn 0.3s ease; }
+        .tab-content.active { display: block; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Ranks */
+        .rank-badge {
+            display: inline-block; padding: 2px 8px; border-radius: 4px; font-family: 'Orbitron', sans-serif; font-size: 0.8rem; margin-left: 10px; font-weight: bold;
+        }
+        .rank-S { background: var(--rank-s); color: #000; box-shadow: 0 0 10px var(--rank-s); }
+        .rank-A { background: var(--rank-a); color: #fff; box-shadow: 0 0 10px var(--rank-a); }
+        .rank-B { background: var(--rank-b); color: #fff; box-shadow: 0 0 10px var(--rank-b); }
+        .rank-C { background: var(--rank-c); color: #000; box-shadow: 0 0 10px var(--rank-c); }
+        .rank-D { background: var(--rank-d); color: #fff; }
+        .rank-E { background: var(--rank-e); color: #fff; }
+
+        /* Quest Level Badges & Progress Bars */
+        .quest-level-badge {
+            background: rgba(0, 240, 255, 0.1);
+            color: var(--primary-glow);
+            border: 1px solid var(--primary-glow);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: bold;
+            white-space: nowrap;
+            margin-left: 10px;
+        }
+
+        /* Forms & Inputs */
+        input[type="text"], input[type="date"], select, input[type="file"] {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 10px;
+            font-family: 'Rajdhani', sans-serif;
+            border-radius: 4px;
+            outline: none;
+            width: 100%;
+            margin-bottom: 10px;
+            color-scheme: dark;
+        }
+
+        input:focus, select:focus { border-color: var(--primary-glow); box-shadow: 0 0 8px rgba(0, 240, 255, 0.3); }
+
+        button.action-btn {
+            background: transparent; color: var(--primary-glow); border: 1px solid var(--primary-glow);
+            padding: 10px 15px; font-family: 'Orbitron', sans-serif; cursor: pointer; transition: all 0.3s ease;
+            border-radius: 4px; width: 100%; text-transform: uppercase;
+        }
+
+        button.action-btn:hover { background: var(--primary-glow); color: #000; box-shadow: 0 0 10px var(--primary-glow); }
+        button.danger-btn { color: var(--danger); border-color: var(--danger); }
+        button.danger-btn:hover { background: var(--danger); color: #fff; box-shadow: 0 0 15px var(--danger); }
+
+        /* Quest List Grouping */
+        .goal-group { margin-bottom: 20px; background: rgba(255,255,255,0.02); border-radius: 6px; border-left: 3px solid var(--primary-glow); }
+        .goal-header { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(0, 240, 255, 0.1); border-radius: 4px 4px 0 0; }
+        .goal-header h3 { margin: 0; color: var(--primary-glow); font-size: 1rem; display: flex; align-items: center;}
+        .list-group { list-style: none; padding: 0; margin: 0; }
+
+        .list-item { display: flex; justify-content: space-between; align-items: flex-start; padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .list-item:last-child { border-bottom: none; }
+
+        .quest-checkbox {
+            appearance: none; width: 22px; height: 22px; border: 2px solid var(--primary-glow); border-radius: 4px; background: transparent; cursor: pointer; position: relative; flex-shrink: 0; transition: 0.2s; margin-top: 2px;
+        }
+        .quest-checkbox:checked { background: var(--primary-glow); box-shadow: 0 0 10px var(--primary-glow); }
+        .quest-checkbox:checked::after {
+            content: '✓'; color: #000; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: bold; font-size: 14px;
+        }
+
+        .quest-details { flex-grow: 1; margin-left: 15px; display: flex; flex-direction: column; }
+        .quest-text { font-size: 1.1rem; word-break: break-word; transition: 0.2s; }
+        
+        .icon-btn { background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 5px; margin-left: 5px; transition: 0.2s; font-family: 'Orbitron', sans-serif; font-weight: bold; font-size: 1.1rem; }
+        .icon-btn.edit:hover { color: var(--primary-glow); }
+        .icon-btn.delete:hover { color: var(--danger); text-shadow: 0 0 5px var(--danger); }
+
+        /* Charts */
+        .chart-container { position: relative; height: 350px; width: 100%; margin-top: 10px; margin-bottom: 20px;}
+        
+        /* Analytics & Rules */
+        .stat-card { background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); padding: 15px; text-align: center; border-radius: 6px; }
+        .stat-value { font-size: 2rem; color: var(--primary-glow); font-family: 'Orbitron', sans-serif; font-weight: bold; text-shadow: 0 0 10px rgba(0,240,255,0.4);}
+        .rule-block { background: rgba(0,0,0,0.3); border-left: 4px solid var(--primary-glow); padding: 15px; margin-bottom: 15px; border-radius: 4px;}
+
+        /* Custom Modal */
+        #systemModal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; pointer-events: none; transition: 0.3s;
+        }
+        #systemModal.visible { opacity: 1; pointer-events: auto; }
+        
+        .modal-content { background: var(--bg-color); border: 2px solid var(--primary-glow); box-shadow: 0 0 30px rgba(0,240,255,0.2); padding: 25px; border-radius: 8px; width: 90%; max-width: 400px; text-align: center; }
+        .modal-content h3 { color: var(--primary-glow); margin-bottom: 15px;}
+        .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+        .hidden-element { display: none !important; }
+        
+        .date-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 20px;}
+        .date-header input { margin: 0; flex: 1; max-width: 200px;}
+        .date-range { display: flex; gap: 10px; align-items: center; width: 100%;}
+        
+    </style>
+</head>
+<body>
+
+    <div class="wrapper">
+        <h1 id="sysTitle">[ SYSTEM INTERFACE ]</h1>
+        
+        <div class="nav-tabs">
+            <div class="nav-btn active" onclick="switchTab('dashboard')">Dashboard</div>
+            <div class="nav-btn" onclick="switchTab('analytics')">Analytics</div>
+            <div class="nav-btn" onclick="switchTab('settings')">Settings</div>
+            <div class="nav-btn" onclick="switchTab('rules')">Rules</div>
+        </div>
+
+        <!-- TAB 1: DASHBOARD -->
+        <div id="tab-dashboard" class="tab-content active">
+            <div class="panel date-header">
+                <h3>Log Date:</h3>
+                <input type="date" id="questDatePicker" onchange="renderDashboard()">
+            </div>
+            
+            <div class="panel">
+                <h2 style="text-align: center;">[i] Player Status (<span id="dashDateLabel">Today</span>)</h2>
+                <div class="chart-container">
+                    <canvas id="dashboardChart"></canvas>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>[!] Daily Quest Board</h2>
+                <div id="questBoardEmpty" class="hidden-element" style="color: var(--text-muted); text-align: center; padding: 20px;">
+                    No quests established. Go to Settings to define Stats and Quests.
+                </div>
+                <div id="dashboardQuestContainer"></div>
+            </div>
+        </div>
+
+        <!-- TAB 2: ANALYTICS -->
+        <div id="tab-analytics" class="tab-content">
+            <div class="panel">
+                <h2>Temporal Range Analysis</h2>
+                <div class="date-range">
+                    <div style="flex:1;">
+                        <label style="font-size:0.8rem; color:var(--text-muted);">Start Date</label>
+                        <input type="date" id="analyticsStart" onchange="renderAnalytics()">
+                    </div>
+                    <span style="color:var(--text-muted); padding-top:15px;">to</span>
+                    <div style="flex:1;">
+                        <label style="font-size:0.8rem; color:var(--text-muted);">End Date</label>
+                        <input type="date" id="analyticsEnd" onchange="renderAnalytics()">
+                    </div>
+                </div>
+                
+                <div class="chart-container" style="height: 300px; margin-top:20px;">
+                    <canvas id="analyticsChart"></canvas>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>System Analytics (All Time)</h2>
+                <div class="grid-2" style="gap: 10px; margin-top: 15px;">
+                    <div class="stat-card">
+                        <div style="font-size: 0.9rem; color: var(--text-muted);">Active Stats</div>
+                        <div class="stat-value" id="statTotalGoals">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statTotalQuests">0</div>
+                        <div style="font-size: 0.9rem; color: var(--text-muted);">Total Quests</div>
+                    </div>
+                    <div class="stat-card" style="grid-column: 1 / -1;">
+                        <div style="font-size: 0.9rem; color: var(--text-muted);">Total XP Generated (All Quests)</div>
+                        <div class="stat-value" id="statTotalXP" style="color: var(--secondary-glow); text-shadow: 0 0 10px rgba(112,0,255,0.4);">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: SETTINGS -->
+        <div id="tab-settings" class="tab-content">
+            <div class="grid-2">
+                <div class="panel">
+                    <h2>[+] Create & Define</h2>
+                    <div style="margin-bottom: 20px;">
+                        <label style="font-size:0.8rem; color:var(--text-muted);">Define a Stat Category (e.g. Strength)</label>
+                        <input type="text" id="goalInput" placeholder="Stat Name...">
+                        <button class="action-btn" onclick="addGoal()">Add Stat Goal</button>
+                    </div>
+                    <hr style="border-color: var(--border-color); margin: 20px 0;">
+                    <div>
+                        <label style="font-size:0.8rem; color:var(--text-muted);">Define a Quest (e.g. 100 Pushups)</label>
+                        <input type="text" id="questInput" placeholder="Quest Description...">
+                        <select id="goalSelect"><option value="">Assign to Stat...</option></select>
+                        <button class="action-btn" onclick="addQuest()">Add Daily Quest</button>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h2>Manage Architecture</h2>
+                    <div id="settingsManagerEmpty" class="hidden-element" style="color: var(--text-muted); text-align: center; padding: 20px;">
+                        System Empty. Add Stats and Quests.
+                    </div>
+                    <div id="settingsManagerContainer" style="max-height: 400px; overflow-y: auto; padding-right: 5px;"></div>
+                </div>
+            </div>
+
+            <div class="panel" style="margin-top: 20px;">
+                <h2>System Data Management</h2>
+                <div class="grid-2">
+                    <div>
+                        <button class="action-btn" onclick="exportJSON()" style="margin-bottom: 10px;">Export Backup (JSON)</button>
+                        <button class="action-btn" onclick="exportCSV()" style="border-color: #00ffaa; color: #00ffaa; margin-bottom: 10px;">Extract Logs (CSV)</button>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; border: 1px dashed var(--border-color); display: flex; flex-direction: column; justify-content: space-between;">
+                        <div>
+                            <label style="font-size:0.8rem; color:var(--text-muted); display:block; margin-bottom:5px;">Restore System Data</label>
+                            <input type="file" id="importFile" accept=".json" style="margin-bottom: 10px; border:none; padding:0;">
+                            <button class="action-btn" style="border-color: var(--secondary-glow); color: var(--secondary-glow); margin-bottom: 10px;" onclick="importJSON()">Import Data</button>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--danger); text-align: right;">
+                    <button class="action-btn danger-btn" style="width: auto;" onclick="clearAllData()">⚠️ Wipe System Data</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: RULES -->
+        <div id="tab-rules" class="tab-content">
+            <div class="panel">
+                <h2>[i] System Progression Rules</h2>
+                
+                <div class="rule-block">
+                    <h3 style="color:var(--primary-glow); margin-bottom:10px;">Quest Proficiency (Leveling)</h3>
+                    <p>Every time you complete a specific daily quest, that quest individually gains <strong>10 XP</strong>.</p>
+                    <p style="color:var(--text-muted); font-size:0.9rem;">Leveling up a quest requires an increasing amount of XP based on its current level:</p>
+                    <ul style="color:var(--text-muted); font-size:0.9rem;">
+                        <li>Level 1 ➝ 2 requires <strong>10 XP</strong> (1 Completion)</li>
+                        <li>Level 2 ➝ 3 requires <strong>20 XP</strong> (2 Completions)</li>
+                        <li>Level 3 ➝ 4 requires <strong>30 XP</strong> (3 Completions)... etc.</li>
+                    </ul>
+                </div>
+
+                <div class="rule-block" style="border-color: var(--secondary-glow);">
+                    <h3 style="color:var(--secondary-glow); margin-bottom:10px;">Stat Weekly Rankings</h3>
+                    <p>Each Core Stat receives a Rank based on your average quest completion percentage. The cycle <strong>resets every Sunday</strong>.</p>
+                    <p>At the start of the week, your percentage naturally starts at 0% and climbs as you tick off quests.</p>
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap:10px; margin-top:15px;">
+                        <div style="background:rgba(0,0,0,0.5); padding:10px; border-radius:4px; text-align:center;">
+                            <div class="rank-badge rank-A" style="margin:0 0 5px 0;">[ A-Rank ]</div>
+                            <div style="font-size:0.9rem;">81% - 100%</div>
+                        </div>
+                        <div style="background:rgba(0,0,0,0.5); padding:10px; border-radius:4px; text-align:center;">
+                            <div class="rank-badge rank-B" style="margin:0 0 5px 0;">[ B-Rank ]</div>
+                            <div style="font-size:0.9rem;">61% - 80%</div>
+                        </div>
+                        <div style="background:rgba(0,0,0,0.5); padding:10px; border-radius:4px; text-align:center;">
+                            <div class="rank-badge rank-C" style="margin:0 0 5px 0;">[ C-Rank ]</div>
+                            <div style="font-size:0.9rem;">41% - 60%</div>
+                        </div>
+                        <div style="background:rgba(0,0,0,0.5); padding:10px; border-radius:4px; text-align:center;">
+                            <div class="rank-badge rank-D" style="margin:0 0 5px 0;">[ D-Rank ]</div>
+                            <div style="font-size:0.9rem;">21% - 40%</div>
+                        </div>
+                        <div style="background:rgba(0,0,0,0.5); padding:10px; border-radius:4px; text-align:center;">
+                            <div class="rank-badge rank-E" style="margin:0 0 5px 0;">[ E-Rank ]</div>
+                            <div style="font-size:0.9rem;">0% - 20%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rule-block" style="border-color: #ffd700;">
+                    <h3 style="color:#ffd700; margin-bottom:10px;">The S-Rank Awakening</h3>
+                    <p>To achieve the legendary <span class="rank-badge rank-S" style="margin:0;">[ S-Rank ]</span> status for a specific stat, you must prove absolute consistency.</p>
+                    <p><strong>Requirement:</strong> Maintain an A-Rank (81%+) for the *current* week, while also having achieved an A-Rank in the *previous* week.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom System Modal -->
+    <div id="systemModal">
+        <div class="modal-content">
+            <h3 id="modalTitle">Alert</h3>
+            <p id="modalMessage"></p>
+            <input type="text" id="modalInput" class="hidden-element">
+            <div class="modal-actions">
+                <button class="action-btn" id="modalConfirmBtn">Confirm</button>
+                <button class="action-btn" id="modalCancelBtn" style="border-color: var(--text-muted); color: var(--text-muted);">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- State Management ---
+        let state = { goals: [], quests: [], logs: {} };
+        let dashChartInstance = null;
+        let analyticsChartInstance = null;
+
+        // --- Date Logic ---
+        function toDateObj(str) { const [y, m, d] = str.split('-'); return new Date(y, m - 1, d); }
+        function toStr(dateObj) { 
+            return `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`; 
+        }
+        function getTodayStr() { return toStr(new Date()); }
+        
+        function getWeekBounds(dateStr) {
+            const d = toDateObj(dateStr);
+            const day = d.getDay(); // 0 is Sunday
+            const start = new Date(d); start.setDate(d.getDate() - day);
+            const end = new Date(d); end.setDate(d.getDate() + (6 - day));
+            return { start: toStr(start), end: toStr(end) };
+        }
+        function getPrevWeekBounds(dateStr) {
+            const d = toDateObj(dateStr); d.setDate(d.getDate() - 7);
+            return getWeekBounds(toStr(d));
+        }
+
+        window.onload = () => {
+            loadData();
+            
+            const today = getTodayStr();
+            document.getElementById('questDatePicker').value = today;
+            
+            const logDates = Object.keys(state.logs).sort();
+            document.getElementById('analyticsStart').value = logDates.length > 0 ? logDates[0] : today;
+            document.getElementById('analyticsEnd').value = today;
+            
+            Chart.defaults.color = '#4a6b8c';
+            Chart.defaults.font.family = "'Rajdhani', sans-serif";
+
+            updateSettingsDropdown();
+            renderDashboard(); 
+        };
+
+        // --- Core RPG Systems ---
+        function calculateQuestLevel(questId) {
+            let totalXP = 0;
+            // Iterate through all historical logs to calculate true lifetime XP of the quest
+            Object.values(state.logs).forEach(dayLog => {
+                if (dayLog[questId]) totalXP += 10;
+            });
+            
+            let level = 1;
+            let xpReq = 10;
+            let currentXP = totalXP;
+            
+            // Loop until current XP is less than required for next level
+            while(currentXP >= xpReq) {
+                currentXP -= xpReq;
+                level++;
+                xpReq = level * 10;
+            }
+            
+            return { level, currentXP, xpReq, totalXP };
+        }
+
+        function getGoalWeeklyCompletion(goalId, startStr, endStr) {
+            const goalQuests = state.quests.filter(q => q.goalId === goalId);
+            if (goalQuests.length === 0) return 0;
+            
+            const totalPossible = goalQuests.length * 7;
+            let actualHits = 0;
+            
+            let curr = toDateObj(startStr);
+            const end = toDateObj(endStr);
+            
+            while(curr <= end) {
+                const dateKey = toStr(curr);
+                const dailyLog = state.logs[dateKey] || {};
+                goalQuests.forEach(q => { if (dailyLog[q.id]) actualHits++; });
+                curr.setDate(curr.getDate() + 1);
+            }
+            
+            return Math.round((actualHits / totalPossible) * 100);
+        }
+
+        function getGoalRank(goalId, targetDateStr) {
+            const currentWeek = getWeekBounds(targetDateStr);
+            const currentPct = getGoalWeeklyCompletion(goalId, currentWeek.start, currentWeek.end);
+            
+            let rank = 'E';
+            if (currentPct >= 81) rank = 'A';
+            else if (currentPct >= 61) rank = 'B';
+            else if (currentPct >= 41) rank = 'C';
+            else if (currentPct >= 21) rank = 'D';
+
+            if (rank === 'A') {
+                const prevWeek = getPrevWeekBounds(targetDateStr);
+                const prevPct = getGoalWeeklyCompletion(goalId, prevWeek.start, prevWeek.end);
+                if (prevPct >= 81) rank = 'S';
+            }
+            return rank;
+        }
+
+        // --- Tab Switching ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+
+            if (tabId === 'dashboard') renderDashboard();
+            if (tabId === 'analytics') renderAnalytics();
+            if (tabId === 'settings') renderSettingsManager();
+        }
+
+        // --- Custom Modal System ---
+        const sysModal = {
+            callback: null,
+            show: function(type, title, message, defaultValue, cb) {
+                document.getElementById('systemModal').classList.add('visible');
+                document.getElementById('modalTitle').textContent = `[ ${title} ]`;
+                document.getElementById('modalTitle').style.color = title.includes('WARNING') ? 'var(--danger)' : 'var(--primary-glow)';
+                document.getElementById('modalMessage').textContent = message;
+                
+                const inputEl = document.getElementById('modalInput');
+                if (type === 'prompt') {
+                    inputEl.classList.remove('hidden-element');
+                    inputEl.value = defaultValue || ''; inputEl.focus();
+                } else {
+                    inputEl.classList.add('hidden-element');
+                }
+                document.getElementById('modalCancelBtn').style.display = (type === 'alert') ? 'none' : 'block';
+                this.callback = cb;
+            },
+            close: function() { document.getElementById('systemModal').classList.remove('visible'); this.callback = null; },
+            confirm: function() { const val = document.getElementById('modalInput').value; const cb = this.callback; this.close(); if (cb) cb(val !== undefined ? val : true); }
+        };
+
+        document.getElementById('modalConfirmBtn').onclick = () => sysModal.confirm();
+        document.getElementById('modalCancelBtn').onclick = () => sysModal.close();
+
+        // --- Settings / CRUD Logic ---
+        function addGoal() {
+            const val = document.getElementById('goalInput').value.trim();
+            if (!val) return sysModal.show('alert', 'Error', 'Stat name cannot be empty.');
+            state.goals.push({ id: 'g_'+Date.now(), name: val });
+            document.getElementById('goalInput').value = '';
+            saveData(); updateSettingsDropdown(); renderSettingsManager();
+        }
+
+        function editGoal(id) {
+            const goal = state.goals.find(g => g.id === id);
+            if(!goal) return;
+            sysModal.show('prompt', 'Rename Stat', 'Enter new name:', goal.name, (newVal) => {
+                if (newVal && newVal.trim() !== '') { goal.name = newVal.trim(); saveData(); updateSettingsDropdown(); renderSettingsManager(); }
+            });
+        }
+
+        function deleteGoal(id) {
+            sysModal.show('prompt', 'Delete Stat', 'This removes all associated quests. Type "YES" to confirm.', '', (val) => {
+                if(val === 'YES') {
+                    state.goals = state.goals.filter(g => g.id !== id); state.quests = state.quests.filter(q => q.goalId !== id);
+                    saveData(); updateSettingsDropdown(); renderSettingsManager();
+                }
+            });
+        }
+
+        function addQuest() {
+            const text = document.getElementById('questInput').value.trim();
+            const goalId = document.getElementById('goalSelect').value;
+            if (!text || !goalId) return sysModal.show('alert', 'Error', 'Provide a quest description and assign a stat.');
+            state.quests.push({ id: 'q_'+Date.now(), text, goalId });
+            document.getElementById('questInput').value = '';
+            saveData(); renderSettingsManager();
+        }
+
+        function editQuest(id) {
+            const quest = state.quests.find(q => q.id === id);
+            if(!quest) return;
+            sysModal.show('prompt', 'Rename Quest', 'Enter new description:', quest.text, (newVal) => {
+                if (newVal && newVal.trim() !== '') { quest.text = newVal.trim(); saveData(); renderSettingsManager(); }
+            });
+        }
+
+        function deleteQuest(id) {
+            sysModal.show('prompt', 'Delete Quest', 'Type "YES" to confirm.', '', (val) => {
+                if(val === 'YES') { state.quests = state.quests.filter(q => q.id !== id); saveData(); renderSettingsManager(); }
+            });
+        }
+
+        function updateSettingsDropdown() {
+            const select = document.getElementById('goalSelect');
+            select.innerHTML = '<option value="">Assign to Stat...</option>';
+            state.goals.forEach(g => {
+                const opt = document.createElement('option'); opt.value = g.id; opt.textContent = g.name; select.appendChild(opt);
+            });
+        }
+
+        function renderSettingsManager() {
+            const container = document.getElementById('settingsManagerContainer');
+            const emptyMsg = document.getElementById('settingsManagerEmpty');
+            container.innerHTML = '';
+
+            if (state.goals.length === 0) return emptyMsg.classList.remove('hidden-element');
+            emptyMsg.classList.add('hidden-element');
+
+            state.goals.forEach(goal => {
+                const goalQuests = state.quests.filter(q => q.goalId === goal.id);
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'goal-group';
+                groupDiv.innerHTML = `
+                    <div class="goal-header">
+                        <h3>[ ${goal.name} ]</h3>
+                        <div>
+                            <button class="icon-btn edit" onclick="editGoal('${goal.id}')">✎</button>
+                            <button class="icon-btn delete" onclick="deleteGoal('${goal.id}')">✗</button>
+                        </div>
+                    </div>
+                    <ul class="list-group" id="settings_list_${goal.id}"></ul>
+                `;
+                container.appendChild(groupDiv);
+                const listEl = document.getElementById(`settings_list_${goal.id}`);
+                
+                if(goalQuests.length === 0) listEl.innerHTML = `<li class="list-item" style="color:var(--text-muted); font-size: 0.9rem;">No quests assigned.</li>`;
+                
+                goalQuests.forEach(quest => {
+                    const li = document.createElement('li'); li.className = 'list-item';
+                    li.innerHTML = `
+                        <div class="quest-text" style="margin-left:0; font-size:1rem;">- ${quest.text}</div>
+                        <div>
+                            <button class="icon-btn edit" onclick="editQuest('${quest.id}')">✎</button>
+                            <button class="icon-btn delete" onclick="deleteQuest('${quest.id}')">✗</button>
+                        </div>
+                    `;
+                    listEl.appendChild(li);
+                });
+            });
+        }
+
+        function clearAllData() {
+            sysModal.show('prompt', 'CRITICAL WARNING', 'This permanently deletes ALL Stats, Quests, and Logs. Type "WIPE" to confirm.', '', (val) => {
+                if(val === 'WIPE') {
+                    state = { goals: [], quests: [], logs: {} }; saveData();
+                    updateSettingsDropdown(); renderSettingsManager();
+                    if(document.getElementById('tab-dashboard').classList.contains('active')) renderDashboard();
+                    if(document.getElementById('tab-analytics').classList.contains('active')) renderAnalytics();
+                    sysModal.show('alert', 'System Status', 'All data eradicated. System reset complete.');
+                } else if (val) { sysModal.show('alert', 'Error', 'Validation failed. Deletion aborted.'); }
+            });
+        }
+
+        // --- Dashboard Logic ---
+        function toggleQuest(questId) {
+            const dateStr = document.getElementById('questDatePicker').value;
+            if (!state.logs[dateStr]) state.logs[dateStr] = {};
+            state.logs[dateStr][questId] = !state.logs[dateStr][questId];
+            saveData();
+            
+            renderDashboard(); 
+        }
+
+        function renderDashboard() {
+            const dateStr = document.getElementById('questDatePicker').value;
+            document.getElementById('dashDateLabel').textContent = (dateStr === getTodayStr()) ? "Today" : dateStr;
+            
+            const container = document.getElementById('dashboardQuestContainer');
+            const emptyMsg = document.getElementById('questBoardEmpty');
+            container.innerHTML = '';
+
+            if (state.goals.length === 0) {
+                emptyMsg.classList.remove('hidden-element');
+            } else {
+                emptyMsg.classList.add('hidden-element');
+                const dailyLog = state.logs[dateStr] || {};
+
+                state.goals.forEach(goal => {
+                    const goalQuests = state.quests.filter(q => q.goalId === goal.id);
+                    if(goalQuests.length === 0) return; 
+
+                    const rank = getGoalRank(goal.id, dateStr);
+
+                    const groupDiv = document.createElement('div');
+                    groupDiv.className = 'goal-group';
+                    groupDiv.innerHTML = `
+                        <div class="goal-header">
+                            <h3>[ ${goal.name} ] <span class="rank-badge rank-${rank}">[ ${rank}-Rank ]</span></h3>
+                        </div>
+                        <ul class="list-group" id="dash_list_${goal.id}"></ul>
+                    `;
+                    container.appendChild(groupDiv);
+
+                    const listEl = document.getElementById(`dash_list_${goal.id}`);
+
+                    goalQuests.forEach(quest => {
+                        const isChecked = dailyLog[quest.id] ? 'checked' : '';
+                        const qStats = calculateQuestLevel(quest.id);
+                        const progressPct = (qStats.currentXP / qStats.xpReq) * 100;
+
+                        const li = document.createElement('li');
+                        li.className = 'list-item';
+                        
+                        li.innerHTML = `
+                            <input type="checkbox" class="quest-checkbox" onchange="toggleQuest('${quest.id}')" ${isChecked}>
+                            <div class="quest-details">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5px;">
+                                    <label class="quest-text" style="cursor: pointer; margin-left: 0; ${isChecked ? 'text-decoration: line-through; color: var(--text-muted);' : ''}">
+                                        ${quest.text}
+                                        <input type="checkbox" style="display:none;" onchange="toggleQuest('${quest.id}')" ${isChecked}>
+                                    </label>
+                                    <div class="quest-level-badge">LVL ${qStats.level}</div>
+                                </div>
+                                <div style="width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; margin-top: 2px;">
+                                    <div style="width: ${progressPct}%; height: 100%; background: var(--primary-glow); box-shadow: 0 0 5px var(--primary-glow); transition: width 0.4s ease;"></div>
+                                </div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted); text-align: right; margin-top: 3px; font-family: 'Orbitron', sans-serif;">
+                                    ${qStats.currentXP} / ${qStats.xpReq} XP
+                                </div>
+                            </div>
+                        `;
+                        listEl.appendChild(li);
+                    });
+                });
+            }
+
+            // Radar Chart with Rank labels
+            const data = calculateChartData(dateStr, dateStr, true); 
+            if (dashChartInstance) {
+                dashChartInstance.data.labels = data.labels; dashChartInstance.data.datasets[0].data = data.data; dashChartInstance.update();
+            } else { dashChartInstance = createRadarChart('dashboardChart', data); }
+        }
+
+        // --- Analytics Logic ---
+        function renderAnalytics() {
+            const start = document.getElementById('analyticsStart').value;
+            const end = document.getElementById('analyticsEnd').value;
+            if(start > end) return sysModal.show('alert', 'Error', 'Start date cannot be after End date.');
+
+            const data = calculateChartData(start, end, false); // Analytics chart doesn't show weekly rank, shows strict range average
+            if (analyticsChartInstance) {
+                analyticsChartInstance.data.labels = data.labels; analyticsChartInstance.data.datasets[0].data = data.data; analyticsChartInstance.update();
+            } else { analyticsChartInstance = createRadarChart('analyticsChart', data); }
+
+            document.getElementById('statTotalGoals').textContent = state.goals.length;
+            document.getElementById('statTotalQuests').textContent = state.quests.length;
+            
+            // Recalculate total XP generated from all quests combined
+            let overallXP = 0;
+            state.quests.forEach(q => { overallXP += calculateQuestLevel(q.id).totalXP; });
+            document.getElementById('statTotalXP').textContent = overallXP;
+        }
+
+        function calculateChartData(startDateStr, endDateStr, appendRank = false) {
+            const labels = []; const data = [];
+            if (state.goals.length === 0) return { labels: ['No Stats'], data: [0] };
+
+            const datesInRange = [];
+            let currDate = toDateObj(startDateStr);
+            const endDate = toDateObj(endDateStr);
+            while(currDate <= endDate) { datesInRange.push(toStr(currDate)); currDate.setDate(currDate.getDate() + 1); }
+            const totalDays = datesInRange.length;
+
+            state.goals.forEach(goal => {
+                const goalQuests = state.quests.filter(q => q.goalId === goal.id);
+                let pct = 0;
+                if (goalQuests.length > 0) {
+                    let totalPossibleHits = goalQuests.length * totalDays;
+                    let actualHits = 0;
+                    datesInRange.forEach(date => {
+                        const dailyLog = state.logs[date] || {};
+                        goalQuests.forEach(q => { if (dailyLog[q.id]) actualHits++; });
+                    });
+                    pct = Math.round((actualHits / totalPossibleHits) * 100);
+                }
+                
+                if(appendRank) {
+                    const rank = getGoalRank(goal.id, endDateStr);
+                    labels.push(`${goal.name} [${rank}] (${pct}%)`);
+                } else {
+                    labels.push(`${goal.name} (${pct}%)`);
+                }
+                
+                data.push(pct);
+            });
+            return { labels, data };
+        }
+
+        function createRadarChart(canvasId, chartData) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            return new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: chartData.labels,
+                    datasets: [{
+                        label: 'Completion', data: chartData.data,
+                        backgroundColor: 'rgba(0, 240, 255, 0.25)', borderColor: '#00f0ff',
+                        pointBackgroundColor: '#fff', pointBorderColor: '#00f0ff',
+                        pointHoverBackgroundColor: '#00f0ff', pointHoverBorderColor: '#fff', borderWidth: 2
+                    }]
+                },
+                options: {
+                    animation: { duration: 800, easing: 'easeOutQuart' },
+                    scales: {
+                        r: {
+                            min: 0, max: 100, beginAtZero: true,
+                            angleLines: { color: 'rgba(26, 54, 93, 0.8)' }, grid: { color: 'rgba(26, 54, 93, 0.8)' },
+                            pointLabels: { color: '#e0f7fa', font: { size: 12, family: "'Orbitron', sans-serif" } },
+                            ticks: { display: false, stepSize: 20 }
+                        }
+                    },
+                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: (context) => ` ${context.raw}% Completed` } } },
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        // --- Data Persistence ---
+        function saveData() { localStorage.setItem('systemDataV6', JSON.stringify(state)); }
+        function loadData() {
+            const saved = localStorage.getItem('systemDataV6') || localStorage.getItem('systemDataV5') || localStorage.getItem('systemDataV4') || localStorage.getItem('systemDataV3'); 
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    state.goals = parsed.goals || []; state.quests = parsed.quests || []; state.logs = parsed.logs || {};
+                } catch(e) { console.error("Save data corrupted"); }
+            }
+        }
+
+        function exportJSON() {
+            const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+            downloadBlob(blob, `System_Backup_${getTodayStr()}.json`);
+            sysModal.show('alert', 'System Export', 'Data successfully saved.');
+        }
+
+        function importJSON() {
+            const fileInput = document.getElementById('importFile');
+            const file = fileInput.files[0];
+            if (!file) return sysModal.show('alert', 'Error', 'Please select a JSON file first.');
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedState = JSON.parse(e.target.result);
+                    if(importedState.goals && importedState.quests) {
+                        state = importedState; if(!state.logs) state.logs = {}; saveData();
+                        updateSettingsDropdown(); renderSettingsManager();
+                        if(document.getElementById('tab-dashboard').classList.contains('active')) renderDashboard();
+                        if(document.getElementById('tab-analytics').classList.contains('active')) renderAnalytics();
+                        sysModal.show('alert', 'System Update', 'Data successfully synchronized.'); fileInput.value = ''; 
+                    } else { sysModal.show('alert', 'Error', 'Invalid file format.'); }
+                } catch (err) { sysModal.show('alert', 'Error', 'Data corrupted.'); }
+            };
+            reader.readAsText(file);
+        }
+
+        function exportCSV() {
+            if (state.quests.length === 0) return sysModal.show('alert', 'Export Error', 'No quests exist to export.');
+            let csv = 'Date,Stat Goal,Quest Description,Level,Status\n';
+            let dates = Object.keys(state.logs).sort();
+            if(dates.length === 0) dates = [getTodayStr()];
+            dates.forEach(date => {
+                state.quests.forEach(q => {
+                    const goal = state.goals.find(g => g.id === q.goalId);
+                    const goalName = goal ? goal.name.replace(/,/g, '') : 'Unknown'; 
+                    const questText = q.text.replace(/,/g, ''); 
+                    const isCompleted = state.logs[date] && state.logs[date][q.id] === true;
+                    // Note: Level here in export is just calculating current lifetime level, not historical level at that exact date.
+                    const lvl = calculateQuestLevel(q.id).level; 
+                    csv += `${date},${goalName},${questText},${lvl},${isCompleted ? 'Completed' : 'Missed'}\n`;
+                });
+            });
+            downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8;" }), `System_Logs_${getTodayStr()}.csv`);
+            sysModal.show('alert', 'System Export', 'Logs exported to CSV.');
+        }
+
+        function downloadBlob(blob, filename) {
+            const url = URL.createObjectURL(blob); const a = document.createElement('a');
+            a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+            document.body.removeChild(a); URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
+
+
