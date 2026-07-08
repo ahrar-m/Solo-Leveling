@@ -1,7 +1,3 @@
-## ⚠️ Project No Longer Maintained
-
-This project is an activity of the past and is no longer being actively developed or maintained. 
-
 # Solo Leveling: "The System" Habit Tracker 🎮
 
 Welcome, Player.
