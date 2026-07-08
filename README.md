@@ -54,3 +54,37 @@ This repository contains the source code for a highly gamified, standalone habit
 
 ---
 *"The System is merely a tool. Your will determines your limits."*
+
+
+
+## Future Scope
+- Have negative daily quests page 
+- Show ranking history (allow to keep scrolling at past weeks ranking)
+- Option to pause levelling of a particular level (even pause goals too)
+- Stages in a single Daily Quest (like sleeping for a minimum of 6 hrs is stage 1, stage 2 is 7 hrs, stage 3 is 8 hrs. Max 10 XP granted if highest stage ticked. Allow XP definition for lower stages)
+- Concept of Weekly and Monthly quests (identify best way to retain existing functionalities while adding these)
+-
+
+
+## Future Scope
+- Quest comment option which can be edited, comments explorer tab
+- There seems to be an issue with daily quests with multiple stages. i want all of the subquests to be individually completeable (all complete means automatically parent quest is marked complete)
+- Recheck if all logics work as expected
+- Even retroactive task addition with stages doesnt seem to work, it adds for today instead
+
+## Future Scope & Development Roadmap
+
+### I. Visuals, UI, and User Experience
+* **Mobile Optimization:** Expand touch targets, specifically for the custom checkboxes (`.quest-checkbox` and `.subquest-checkbox`). Increasing padding and utilizing a minimum touch target size of 44x44px will ensure comfortable thumb interaction on standard mobile displays like a OnePlus 8T.
+* **Modal Restructuring:** Improve the visual hierarchy within `#systemModal` (especially the "Edit Quest" view) by grouping related settings into visual "cards," increasing vertical spacing, and slightly darkening input backgrounds to contrast with the main modal color.
+* **Data Visualization Enhancements:** Implement custom tooltips in the Chart.js configuration to display exact completion percentages when hovering or tapping on data points, improving the legibility of dense radar charts.
+* **"Juice" and Game Feel:** Introduce impactful CSS animations. Implement keyframe flashes on the XP bar during level-ups, subtle particle effects, or text color shifts (e.g., turning gold) when a stat reaches S-Rank to make progression feel visceral.
+* **Accessibility (A11y) Integration:** Add `aria-label` attributes to all icon-based buttons (✎, ✗, ▲, ▼) for screen reader support, and ensure custom checkboxes are focusable via the `tab` key for keyboard navigation.
+
+### II. Core Functionalities & RPG Mechanics
+* **DOM Rendering Optimization:** Transition away from heavy `innerHTML` string concatenation for list rendering. Refactor to update specific DOM nodes or utilize `DocumentFragment` to prevent micro-stutters and loss of scroll position as the quest list scales.
+* **Configurable System Reset Time:** Add a settings variable to offset the "Day" boundary (e.g., rolling over at 4:00 AM instead of 12:00 AM) to accommodate late-night productivity and ensure the system time string matches user sleep cycles.
+* **Streak & Combo Mechanics:** Introduce a consecutive completion tracker. Hitting daily targets for multiple days in a row will ignite a visual "streak" flame and grant XP multipliers (e.g., 1.2x XP after 3 days), incentivizing daily momentum.
+* **Advanced Filtering & Tagging:** Implement robust tagging (`#tags`) and query filtering in the Journal tab. Drawing inspiration from block-level referencing and linked knowledge management tools like Logseq, this will allow for deep-dive analysis of specific habits over time.
+* **Loot & Reward Economy:** Introduce a "System Gold" currency awarded alongside XP. Establish a 'System Shop' tab where earned currency can be spent on custom, real-life rewards (e.g., '1 Hour of Action RPGs' = 500 Gold, 'Order new Bambu Lab filament' = 5000 Gold) to close the gameplay loop.
+* **Automated Data Safety:** Implement a time-based check that triggers a non-intrusive reminder pop-up ("Export required. System data at risk.") if the user has not manually exported a JSON backup within a defined window (e.g., 7 days), mitigating the volatility of `localStorage`.
