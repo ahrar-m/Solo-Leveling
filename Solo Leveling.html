@@ -69,8 +69,16 @@
 
         /* Ranks & Badges */
         .rank-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-family: 'Orbitron', sans-serif; font-size: 0.8rem; margin-left: 10px; font-weight: bold; }
-        .rank-S { background: var(--rank-s); color: #000; box-shadow: 0 0 10px var(--rank-s); }
-        .rank-A { background: var(--rank-a); color: #fff; box-shadow: 0 0 10px var(--rank-a); }
+        @keyframes sRankPulse {
+            0% { box-shadow: 0 0 8px var(--rank-s); }
+            100% { box-shadow: 0 0 20px var(--rank-s), 0 0 5px #fff; }
+        }
+        @keyframes aRankPulse {
+            0% { box-shadow: 0 0 8px var(--rank-a); }
+            100% { box-shadow: 0 0 20px var(--rank-a); }
+        }
+        .rank-S { background: var(--rank-s); color: #000; box-shadow: 0 0 10px var(--rank-s); animation: sRankPulse 1s infinite alternate; }
+        .rank-A { background: var(--rank-a); color: #fff; box-shadow: 0 0 10px var(--rank-a); animation: aRankPulse 1.2s infinite alternate; }
         .rank-B { background: var(--rank-b); color: #fff; box-shadow: 0 0 10px var(--rank-b); }
         .rank-C { background: var(--rank-c); color: #000; box-shadow: 0 0 10px var(--rank-c); }
         .rank-D { background: var(--rank-d); color: #fff; }
@@ -106,16 +114,26 @@
         .list-item.paused-item { opacity: 0.5; filter: grayscale(1); }
         
         /* Multi-stage / Custom Checkboxes */
-        .quest-checkbox { appearance: none; width: 22px; height: 22px; border: 2px solid var(--primary-glow); border-radius: 4px; background: transparent; cursor: pointer; position: relative; flex-shrink: 0; transition: 0.2s; margin-top: 2px; }
+        .quest-checkbox { appearance: none; width: 22px; height: 22px; border: 2px solid var(--primary-glow); border-radius: 4px; background: transparent; cursor: pointer; position: relative; flex-shrink: 0; transition: transform 0.1s ease, background 0.2s, box-shadow 0.2s, border-color 0.2s; margin-top: 2px; }
+        .quest-checkbox::before { content: ''; position: absolute; top: -11px; left: -11px; right: -11px; bottom: -11px; }
+        .quest-checkbox:hover { transform: scale(1.15); box-shadow: 0 0 8px var(--primary-glow); }
+        .quest-checkbox:active { transform: scale(0.9); }
+        .quest-checkbox:focus-visible { outline: 2px solid var(--primary-glow); outline-offset: 2px; }
         .quest-checkbox:checked { background: var(--primary-glow); box-shadow: 0 0 10px var(--primary-glow); }
         .quest-checkbox:checked::after { content: '✓'; color: #000; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: bold; font-size: 14px; }
         .quest-checkbox.negative { border-color: var(--danger); }
+        .quest-checkbox.negative:hover { box-shadow: 0 0 8px var(--danger); }
+        .quest-checkbox.negative:focus-visible { outline-color: var(--danger); }
         .quest-checkbox.negative:checked { background: var(--danger); box-shadow: 0 0 10px var(--danger); }
         .quest-checkbox.negative:checked::after { content: '✗'; color: #fff; }
 
         .subquests-container { padding-left: 35px; padding-top: 5px; display: flex; flex-direction: column; gap: 6px; width: 100%; }
         .subquest-label { font-size: 0.9rem; color: var(--text-main); display: flex; align-items: center; gap: 8px; cursor: pointer; }
-        .subquest-checkbox { appearance: none; width: 16px; height: 16px; border: 1px solid var(--text-muted); border-radius: 3px; background: transparent; cursor: pointer; position: relative; margin: 0; transition: 0.2s;}
+        .subquest-checkbox { appearance: none; width: 16px; height: 16px; border: 1px solid var(--text-muted); border-radius: 3px; background: transparent; cursor: pointer; position: relative; margin: 0; transition: transform 0.1s ease, background 0.2s, border-color 0.2s; }
+        .subquest-checkbox::before { content: ''; position: absolute; top: -14px; left: -14px; right: -14px; bottom: -14px; }
+        .subquest-checkbox:hover { transform: scale(1.15); border-color: var(--primary-glow); }
+        .subquest-checkbox:active { transform: scale(0.9); }
+        .subquest-checkbox:focus-visible { outline: 2px solid var(--primary-glow); outline-offset: 2px; }
         .subquest-checkbox:checked { background: var(--primary-glow); border-color: var(--primary-glow); }
         .subquest-checkbox:checked::after { content: '✓'; color: #000; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: bold; font-size: 10px; }
 
@@ -149,27 +167,156 @@
         .stage-builder-row { display: flex; gap: 10px; margin-bottom: 10px; }
         .stage-builder-row input { margin-bottom: 0; }
         
-        /* Modals */
+        /* Modals & Level Up Overlay */
         #systemModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; pointer-events: none; transition: 0.3s; }
         #systemModal.visible { opacity: 1; pointer-events: auto; }
         .modal-content { background: var(--bg-color); border: 2px solid var(--primary-glow); box-shadow: 0 0 30px rgba(0,240,255,0.2); padding: 25px; border-radius: 8px; width: 90%; max-width: 450px; text-align: center; max-height: 90vh; overflow-y: auto; }
         .hidden-element { display: none !important; }
         
+        .modal-card { background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; margin-bottom: 12px; text-align: left; }
+        .modal-card h4 { font-family: 'Orbitron', sans-serif; color: var(--primary-glow); font-size: 0.85rem; margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid rgba(0, 240, 255, 0.1); padding-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .modal-card input, .modal-card textarea, .modal-card select { background: rgba(0, 0, 0, 0.7) !important; margin-bottom: 8px !important; }
+        
         .global-date-picker { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .global-date-picker h3 { margin: 0; font-size: 1.1rem; }
         .global-date-picker input { width: auto; margin: 0; }
 
-        #editQuestForm label { display: block; text-align: left; color: var(--primary-glow); font-size: 0.8rem; margin-top: 10px; margin-bottom: 5px; font-family: 'Orbitron', sans-serif;}
+        #editQuestForm label { display: block; text-align: left; color: var(--text-muted); font-size: 0.75rem; margin-top: 5px; margin-bottom: 3px; font-family: 'Orbitron', sans-serif; text-transform: uppercase;}
+        
+        /* Level Up Animation HUD Overlay */
+        .level-up-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5, 9, 20, 0.9); z-index: 2000; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(8px); opacity: 0; pointer-events: none; transition: opacity 0.5s ease; }
+        .level-up-overlay.active { opacity: 1; pointer-events: auto; }
+        .level-up-content { text-align: center; transform: scale(0.8); opacity: 0; transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.6s ease; }
+        .level-up-overlay.active .level-up-content { transform: scale(1); opacity: 1; }
+        .level-up-glitch { font-family: 'Orbitron', sans-serif; font-size: 3.5rem; font-weight: bold; color: var(--primary-glow); text-shadow: 0 0 20px var(--primary-glow), 0 0 40px var(--secondary-glow); letter-spacing: 5px; margin-bottom: 10px; animation: neonPulse 1s infinite alternate; }
+        .level-up-subtitle { font-family: 'Orbitron', sans-serif; font-size: 1rem; color: var(--text-muted); letter-spacing: 3px; margin-bottom: 20px; }
+        .level-up-details { font-family: 'Orbitron', sans-serif; font-size: 1.3rem; font-weight: bold; color: #fff; border: 1px solid var(--primary-glow); padding: 8px 20px; border-radius: 4px; display: inline-block; box-shadow: 0 0 15px rgba(0, 240, 255, 0.2); background: rgba(0, 240, 255, 0.05); }
+        @keyframes neonPulse {
+            from { text-shadow: 0 0 15px var(--primary-glow), 0 0 30px var(--secondary-glow); }
+            to { text-shadow: 0 0 25px var(--primary-glow), 0 0 45px var(--secondary-glow), 0 0 8px #fff; }
+        }
+        
+        .xp-container.level-up-flash { animation: xpBarFlash 1.5s ease-out; }
+        @keyframes xpBarFlash {
+            0% { box-shadow: 0 0 0px var(--primary-glow); border-color: var(--border-color); }
+            20% { box-shadow: 0 0 25px var(--primary-glow), inset 0 0 15px var(--primary-glow); border-color: var(--primary-glow); }
+            40% { box-shadow: 0 0 25px var(--secondary-glow), inset 0 0 15px var(--secondary-glow); border-color: var(--secondary-glow); }
+            100% { box-shadow: 0 0 0px var(--primary-glow); border-color: var(--border-color); }
+        }
+        
+        .streak-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.95rem;
+            color: #ff9900;
+            text-shadow: 0 0 8px rgba(255, 153, 0, 0.6);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-weight: bold;
+            align-self: center;
+        }
+        .streak-flame {
+            animation: flameFlicker 1.2s infinite alternate ease-in-out;
+            display: inline-block;
+        }
+        @keyframes flameFlicker {
+            0% { transform: scale(1) rotate(-2deg); filter: drop-shadow(0 0 2px #ff3300); }
+            50% { transform: scale(1.1) rotate(3deg); filter: drop-shadow(0 0 6px #ffcc00); }
+            100% { transform: scale(0.95) rotate(-3deg); filter: drop-shadow(0 0 3px #ff3300); }
+        }
+        
+        .backup-banner {
+            background: rgba(255, 153, 0, 0.15);
+            border: 1px solid var(--warning);
+            border-radius: 6px;
+            padding: 10px 15px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: bold;
+            color: var(--warning);
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.1);
+            font-size: 0.95rem;
+            gap: 10px;
+            animation: slideDown 0.3s ease;
+        }
+        @keyframes slideDown {
+            from { transform: translateY(-10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .backup-banner .warning-icon {
+            font-size: 1.2rem;
+            animation: beaconPulse 1s infinite alternate;
+        }
+        @keyframes beaconPulse {
+            from { opacity: 0.6; }
+            to { opacity: 1; filter: drop-shadow(0 0 4px var(--warning)); }
+        }
+        .backup-banner .backup-btn {
+            background: var(--warning);
+            color: #000;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 4px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.75rem;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+        .backup-banner .backup-btn:hover {
+            background: #fff;
+            box-shadow: 0 0 8px #fff;
+        }
+        .backup-banner .close-backup-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 0 5px;
+        }
+        .backup-banner .close-backup-btn:hover {
+            color: #fff;
+        }
+        
+        .journal-tag {
+            color: var(--primary-glow);
+            font-weight: bold;
+            text-shadow: 0 0 5px rgba(0, 240, 255, 0.4);
+            background: rgba(0, 240, 255, 0.1);
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: inline-block;
+            margin: 0 2px;
+            transition: all 0.2s ease;
+        }
+        .journal-tag:hover {
+            background: rgba(0, 240, 255, 0.2);
+            box-shadow: 0 0 5px var(--primary-glow);
+        }
     </style>
 </head>
 <body>
 
     <div class="wrapper">
+        <div id="backupReminderBanner" class="backup-banner hidden-element" aria-label="Backup Alert Banner">
+            <span class="warning-icon">⚠</span> 
+            <span>SYSTEM AT RISK: Last backup was <span id="backupDaysCount">2</span> days ago. Please export a JSON backup.</span>
+            <button class="backup-btn" onclick="triggerBackupFromBanner()">Export Now</button>
+            <button class="close-backup-btn" aria-label="Close Warning" onclick="closeBackupBanner()">✗</button>
+        </div>
+        
         <h1 id="sysTitle">[ SYSTEM INTERFACE ]</h1>
         
         <div class="xp-container" id="xpContainer">
             <div class="xp-header">
                 <div class="level-text">PLAYER LVL. <span id="playerLevelDisplay">1</span></div>
+                <div id="streakDisplay" class="streak-text hidden-element" aria-label="Active Streak Info"><span class="streak-flame">🔥</span> <span id="streakCountDisplay">0</span>-DAY STREAK (<span id="streakMultDisplay">1.0</span>x)</div>
                 <div class="xp-text"><span id="playerXpDisplay">0</span> / <span id="playerNextXpDisplay">10</span> XP</div>
             </div>
             <div class="xp-bar-bg"><div class="xp-bar-fill" id="xpBarFill"></div></div>
@@ -382,11 +529,27 @@
                 </div>
             </div>
             
-            <div class="panel" style="margin-top: 20px; text-align: center;">
-                <button class="action-btn" style="width:auto; margin-right:10px;" onclick="exportJSON()">Export JSON</button>
-                <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importJSON()">
-                <button class="action-btn" style="width:auto; border-color:var(--secondary-glow); color:var(--secondary-glow); margin-right:10px;" onclick="document.getElementById('importFile').click()">Import JSON</button>
-                <button class="action-btn danger-btn" style="width:auto;" onclick="clearAllData()">Wipe Data</button>
+            <div class="panel" style="margin-top: 20px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 15px;">
+                <div style="display: flex; gap: 15px; align-items: center; justify-content: center; flex-wrap: wrap; width: 100%;">
+                    <div style="display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.3); padding: 5px 15px; border-radius: 4px; border: 1px solid var(--border-color);">
+                        <label style="font-family:'Orbitron', sans-serif; color:var(--primary-glow); font-size:0.8rem; margin:0;">Day Reset Rollover:</label>
+                        <select id="dayResetSelect" onchange="updateResetOffset()" style="width:auto; margin:0; padding:5px 10px; font-size:0.8rem;">
+                            <option value="0">12:00 AM (Midnight)</option>
+                            <option value="1">1:00 AM</option>
+                            <option value="2">2:00 AM</option>
+                            <option value="3">3:00 AM</option>
+                            <option value="4">4:00 AM (Recommended)</option>
+                            <option value="5">5:00 AM</option>
+                            <option value="6">6:00 AM</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap; width:100%;">
+                    <button class="action-btn" style="width:auto; margin:0;" onclick="exportJSON()">Export JSON</button>
+                    <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importJSON()">
+                    <button class="action-btn" style="width:auto; border-color:var(--secondary-glow); color:var(--secondary-glow); margin:0;" onclick="document.getElementById('importFile').click()">Import JSON</button>
+                    <button class="action-btn danger-btn" style="width:auto; margin:0;" onclick="clearAllData()">Wipe Data</button>
+                </div>
             </div>
         </div>
 
@@ -425,31 +588,47 @@
             <input type="number" id="modalInputNumber" class="hidden-element" placeholder="Req. Quests/Period" style="margin-top:10px;">
             
             <div id="editQuestForm" class="hidden-element" style="text-align:left;">
-                <label>Title</label><input type="text" id="editQTitle">
-                <label>Description</label><textarea id="editQDesc"></textarea>
-                <label>Stat Goal</label><select id="editQGoal"></select>
-                <label>Frequency</label>
-                <select id="editQFreq">
-                    <option value="" disabled>Select Frequency...</option>
-                    <option value="daily">Daily (10 XP)</option>
-                    <option value="weekly">Weekly (70 XP)</option>
-                    <option value="monthly">Monthly (300 XP)</option>
-                </select>
-                <label>Type</label>
-                <select id="editQType">
-                    <option value="" disabled>Select Type...</option>
-                    <option value="positive">Positive</option>
-                    <option value="negative">Negative Quest</option>
-                </select>
-                <label>Subquests (Checklist)</label>
-                <div id="editQStagesContainer"></div>
-                <button class="action-btn" style="padding:5px; font-size:0.8rem; border-color:var(--text-muted); color:var(--text-main);" onclick="addStageInput('editQStagesContainer')">+ Add Subquest</button>
+                <div class="modal-card">
+                    <h4>Basic Information</h4>
+                    <label>Title</label><input type="text" id="editQTitle">
+                    <label>Description</label><textarea id="editQDesc"></textarea>
+                </div>
+                <div class="modal-card">
+                    <h4>System Settings</h4>
+                    <label>Stat Goal</label><select id="editQGoal"></select>
+                    <label>Frequency</label>
+                    <select id="editQFreq">
+                        <option value="" disabled>Select Frequency...</option>
+                        <option value="daily">Daily (10 XP)</option>
+                        <option value="weekly">Weekly (70 XP)</option>
+                        <option value="monthly">Monthly (300 XP)</option>
+                    </select>
+                    <label>Type</label>
+                    <select id="editQType">
+                        <option value="" disabled>Select Type...</option>
+                        <option value="positive">Positive</option>
+                        <option value="negative">Negative Quest</option>
+                    </select>
+                </div>
+                <div class="modal-card">
+                    <h4>Subquests (Checklist)</h4>
+                    <div id="editQStagesContainer"></div>
+                    <button class="action-btn" style="padding:5px; font-size:0.8rem; border-color:var(--text-muted); color:var(--text-main); margin-top: 5px;" onclick="addStageInput('editQStagesContainer')">+ Add Subquest</button>
+                </div>
             </div>
 
             <div style="display:flex; gap:10px; margin-top:20px;">
                 <button class="action-btn" id="modalConfirmBtn">Confirm</button>
                 <button class="action-btn" id="modalCancelBtn" style="border-color: var(--text-muted); color: var(--text-muted);">Cancel</button>
             </div>
+        </div>
+    </div>
+
+    <div id="levelUpOverlay" class="level-up-overlay hidden-element">
+        <div class="level-up-content">
+            <div class="level-up-glitch">LEVEL UP</div>
+            <div class="level-up-subtitle">THE SYSTEM HAS RECORDED YOUR GROWTH</div>
+            <div class="level-up-details">NEW LEVEL REACHED: <span id="newLevelOverlayDisplay">1</span></div>
         </div>
     </div>
 
@@ -463,7 +642,15 @@
         // --- Date & Time Engine ---
         function toDateObj(str) { const [y, m, d] = str.split('-'); return new Date(y, m - 1, d); }
         function toStr(dateObj) { return `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`; }
-        function getTodayStr() { return toStr(new Date()); }
+        function getAdjustedSystemDate() {
+            const now = new Date();
+            const offset = state.dayResetOffset || 0;
+            if (offset > 0) {
+                now.setHours(now.getHours() - offset);
+            }
+            return now;
+        }
+        function getTodayStr() { return toStr(getAdjustedSystemDate()); }
         
         function getEarliestLogDate() { 
             const dates = Object.keys(state.logs).filter(k => !k.startsWith('W-') && !k.startsWith('M-')).sort(); 
@@ -488,6 +675,69 @@
         }
         function getShiftedWeekBounds(dateStr, offsetDays) { const d = toDateObj(dateStr); d.setDate(d.getDate() + offsetDays); return getWeekBounds(toStr(d)); }
 
+        // --- Streak & Combo Engine ---
+        function isDayCompleted(dateStr) {
+            const activeGoals = state.goals.filter(g => !g.isPaused && g.createdAt <= dateStr);
+            let checkedGoalsCount = 0;
+            let completedGoalsCount = 0;
+            
+            activeGoals.forEach(goal => {
+                const posQs = state.quests.filter(q => q.goalId === goal.id && !q.isPaused && q.createdAt <= dateStr && q.frequency === 'daily' && q.type === 'positive');
+                const negQs = state.quests.filter(q => q.goalId === goal.id && !q.isPaused && q.createdAt <= dateStr && q.frequency === 'daily' && q.type === 'negative');
+                
+                if (posQs.length === 0 && negQs.length === 0) return;
+                
+                checkedGoalsCount++;
+                
+                let posHits = 0; posQs.forEach(q => { if(isQuestHit(q, dateStr)) posHits++; });
+                let negHits = 0; negQs.forEach(q => { if(isQuestHit(q, dateStr)) negHits++; });
+                
+                const posTarget = goal.required > 0 ? Math.min(goal.required, posQs.length) : posQs.length;
+                const negTarget = negQs.length;
+                
+                if (posHits >= posTarget && negHits === negTarget) {
+                    completedGoalsCount++;
+                }
+            });
+            
+            if (checkedGoalsCount === 0) return false;
+            return completedGoalsCount === checkedGoalsCount;
+        }
+
+        function calculateAllStreaks() {
+            const streaks = {};
+            const earliest = getSystemStart();
+            const todayStr = getTodayStr();
+            
+            let curr = toDateObj(earliest);
+            const todayObj = toDateObj(todayStr);
+            
+            let currentStreak = 0;
+            while (curr <= todayObj) {
+                const dStr = toStr(curr);
+                const completed = isDayCompleted(dStr);
+                
+                if (dStr === todayStr) {
+                    if (completed) {
+                        currentStreak++;
+                        streaks[dStr] = currentStreak;
+                    } else {
+                        streaks[dStr] = currentStreak;
+                    }
+                } else {
+                    if (completed) {
+                        currentStreak++;
+                        streaks[dStr] = currentStreak;
+                    } else {
+                        currentStreak = 0;
+                        streaks[dStr] = 0;
+                    }
+                }
+                curr.setDate(curr.getDate() + 1);
+            }
+            return streaks;
+        }
+
         // --- Base XP Engine ---
         function getBaseXP(freq) {
             if(freq === 'weekly') return 70;
@@ -503,29 +753,63 @@
             document.getElementById('questDatePicker').value = getTodayStr();
             Chart.defaults.color = '#4a6b8c'; Chart.defaults.font.family = "'Rajdhani', sans-serif";
             
+            if (document.getElementById('dayResetSelect')) {
+                document.getElementById('dayResetSelect').value = state.dayResetOffset || 0;
+            }
+            
             updateSettingsDropdown(); updatePlayerXP(); 
             document.querySelector('.nav-tabs .nav-btn:nth-child(4)').click(); // Defaults to Analytics
+            
+            window.isInitialized = true;
+            checkBackupReminder();
         };
 
         // --- Core RPG Math Engine ---
         function updatePlayerXP() {
+            const streaks = calculateAllStreaks();
+            const todayStr = getTodayStr();
+            const currentStreak = streaks[todayStr] || 0;
+            const currentMult = 1.0 + Math.min(0.5, Math.floor(currentStreak / 3) * 0.1);
+            
+            const streakDisplay = document.getElementById('streakDisplay');
+            const streakCountDisplay = document.getElementById('streakCountDisplay');
+            const streakMultDisplay = document.getElementById('streakMultDisplay');
+            
+            if (streakDisplay && streakCountDisplay && streakMultDisplay) {
+                if (currentStreak > 0) {
+                    streakCountDisplay.textContent = currentStreak;
+                    streakMultDisplay.textContent = currentMult.toFixed(1);
+                    streakDisplay.classList.remove('hidden-element');
+                } else {
+                    streakDisplay.classList.add('hidden-element');
+                }
+            }
+
             let totalXP = 0;
             state.quests.forEach(q => {
                 let qTotal = 0;
-                Object.values(state.logs).forEach(logEntry => {
+                Object.entries(state.logs).forEach(([logKey, logEntry]) => {
                     const val = logEntry[q.id];
                     if (val !== undefined && val !== false && val !== -1) {
+                        let xpEarned = 0;
                         if (Array.isArray(val)) {
                             val.forEach((isChecked, idx) => {
                                 if (isChecked) {
-                                    if (q.type === 'negative') qTotal -= (q.subquests[idx]?.xp || 0);
-                                    else qTotal += (q.subquests[idx]?.xp || 10);
+                                    if (q.type === 'negative') xpEarned -= (q.subquests[idx]?.xp || 0);
+                                    else xpEarned += (q.subquests[idx]?.xp || 10);
                                 }
                             });
                         } else if (val === true) {
-                            if (q.type === 'negative') qTotal -= getBaseXP(q.frequency);
-                            else qTotal += getBaseXP(q.frequency);
+                            if (q.type === 'negative') xpEarned -= getBaseXP(q.frequency);
+                            else xpEarned += getBaseXP(q.frequency);
                         }
+                        
+                        if (xpEarned > 0 && !logKey.startsWith('W-') && !logKey.startsWith('M-')) {
+                            const dayStreak = streaks[logKey] || 0;
+                            const dayMult = 1.0 + Math.min(0.5, Math.floor(dayStreak / 3) * 0.1);
+                            xpEarned = Math.round(xpEarned * dayMult);
+                        }
+                        qTotal += xpEarned;
                     }
                 });
                 totalXP += qTotal;
@@ -535,31 +819,75 @@
             let level = 1; let xpReq = 10; let currentXP = totalXP;
             while(currentXP >= xpReq) { currentXP -= xpReq; level++; xpReq = level * 10; }
             
+            const levelDisplayEl = document.getElementById('playerLevelDisplay');
+            const prevLevel = parseInt(levelDisplayEl.textContent) || 1;
+            
             document.getElementById('playerLevelDisplay').textContent = level;
             document.getElementById('playerXpDisplay').textContent = currentXP;
             document.getElementById('playerNextXpDisplay').textContent = xpReq;
             document.getElementById('xpBarFill').style.width = `${(currentXP / xpReq) * 100}%`;
+
+            if (window.isInitialized && level > prevLevel) {
+                triggerLevelUpAnimation(level);
+            }
+        }
+
+        function triggerLevelUpAnimation(newLevel) {
+            const overlay = document.getElementById('levelUpOverlay');
+            const display = document.getElementById('newLevelOverlayDisplay');
+            const xpContainer = document.getElementById('xpContainer');
+            
+            if (overlay && display) {
+                display.textContent = `LVL ${newLevel}`;
+                overlay.classList.remove('hidden-element');
+                // Trigger reflow
+                overlay.offsetWidth;
+                overlay.classList.add('active');
+                
+                if (xpContainer) {
+                    xpContainer.classList.add('level-up-flash');
+                    setTimeout(() => {
+                        xpContainer.classList.remove('level-up-flash');
+                    }, 1500);
+                }
+                
+                setTimeout(() => {
+                    overlay.classList.remove('active');
+                    setTimeout(() => {
+                        overlay.classList.add('hidden-element');
+                    }, 500);
+                }, 3000);
+            }
         }
 
         function calculateQuestStats(questId) {
             const q = state.quests.find(x => x.id === questId);
             if(!q) return { level: 1, currentXP: 0, xpReq: 10 };
             
+            const streaks = calculateAllStreaks();
             let totalXP = 0;
-            Object.values(state.logs).forEach(logEntry => {
+            Object.entries(state.logs).forEach(([logKey, logEntry]) => {
                 const val = logEntry[questId];
                 if (val !== undefined && val !== false && val !== -1) {
+                    let xpEarned = 0;
                     if (Array.isArray(val)) {
                         val.forEach((isChecked, idx) => {
                             if (isChecked) {
-                                if (q.type === 'negative') totalXP += (q.subquests[idx]?.xp || 0); 
-                                else totalXP += (q.subquests[idx]?.xp || 10);
+                                if (q.type === 'negative') xpEarned += (q.subquests[idx]?.xp || 0); 
+                                else xpEarned += (q.subquests[idx]?.xp || 10);
                             }
                         });
                     } else if (val === true) {
-                        if (q.type === 'negative') totalXP += getBaseXP(q.frequency); 
-                        else totalXP += getBaseXP(q.frequency);
+                        if (q.type === 'negative') xpEarned += getBaseXP(q.frequency); 
+                        else xpEarned += getBaseXP(q.frequency);
                     }
+                    
+                    if (xpEarned > 0 && !logKey.startsWith('W-') && !logKey.startsWith('M-')) {
+                        const dayStreak = streaks[logKey] || 0;
+                        const dayMult = 1.0 + Math.min(0.5, Math.floor(dayStreak / 3) * 0.1);
+                        xpEarned = Math.round(xpEarned * dayMult);
+                    }
+                    totalXP += xpEarned;
                 }
             });
             let level = 1; let xpReq = 10; let currentXP = totalXP;
@@ -896,25 +1224,28 @@
             if (state.goals.length === 0) { document.getElementById('settingsManagerEmpty').classList.remove('hidden-element'); return; }
             document.getElementById('settingsManagerEmpty').classList.add('hidden-element');
 
+            const fragment = document.createDocumentFragment();
+
             state.goals.forEach(goal => {
                 const div = document.createElement('div'); div.className = `goal-group ${goal.isPaused ? 'paused-item' : ''}`;
                 div.innerHTML = `
                     <div class="goal-header">
                         <h3>${goal.isPaused ? '⏸ ' : ''}[ ${goal.name} ]</h3>
                         <div class="action-group">
-                            <button class="icon-btn move" onclick="moveEntity('goal', '${goal.id}', 'up')">▲</button>
-                            <button class="icon-btn move" onclick="moveEntity('goal', '${goal.id}', 'down')">▼</button>
-                            <button class="icon-btn edit" style="margin-left:10px;" onclick="editGoal('${goal.id}')">✎</button>
-                            <button class="icon-btn pause" onclick="togglePause('goal', '${goal.id}')">${goal.isPaused ? '▶' : '⏸'}</button>
-                            <button class="icon-btn delete" onclick="deleteEntity('goal', '${goal.id}')">✗</button>
+                            <button class="icon-btn move" aria-label="Move Up" onclick="moveEntity('goal', '${goal.id}', 'up')">▲</button>
+                            <button class="icon-btn move" aria-label="Move Down" onclick="moveEntity('goal', '${goal.id}', 'down')">▼</button>
+                            <button class="icon-btn edit" aria-label="Edit Stat" style="margin-left:10px;" onclick="editGoal('${goal.id}')">✎</button>
+                            <button class="icon-btn pause" aria-label="${goal.isPaused ? 'Resume' : 'Pause'}" onclick="togglePause('goal', '${goal.id}')">${goal.isPaused ? '▶' : '⏸'}</button>
+                            <button class="icon-btn delete" aria-label="Delete Stat" onclick="deleteEntity('goal', '${goal.id}')">✗</button>
                         </div>
                     </div>
-                    <ul class="list-group" id="settings_list_${goal.id}"></ul>
+                    <ul class="list-group"></ul>
                 `;
-                c.appendChild(div);
-                const l = document.getElementById(`settings_list_${goal.id}`);
+                
+                const l = div.querySelector('.list-group');
                 const qs = state.quests.filter(q => q.goalId === goal.id);
                 if(qs.length === 0) l.innerHTML = `<li class="list-item"><span style="font-size:0.8rem; color:var(--text-muted);">No quests.</span></li>`;
+                
                 qs.forEach(q => {
                     const li = document.createElement('li'); li.className = `list-item ${q.isPaused ? 'paused-item' : ''}`;
                     const fCap = q.frequency.charAt(0).toUpperCase() + q.frequency.slice(1);
@@ -927,17 +1258,19 @@
                                 <span style="font-size:0.75rem; color:var(--text-muted); margin-left:5px;">(${fCap})${nTag}</span>
                             </div>
                             <div class="action-group">
-                                <button class="icon-btn move" onclick="moveEntity('quest', '${q.id}', 'up')">▲</button>
-                                <button class="icon-btn move" onclick="moveEntity('quest', '${q.id}', 'down')">▼</button>
-                                <button class="icon-btn edit" style="margin-left:10px;" onclick="openEditQuest('${q.id}')">✎</button>
-                                <button class="icon-btn pause" onclick="togglePause('quest', '${q.id}')">${q.isPaused ? '▶' : '⏸'}</button>
-                                <button class="icon-btn delete" onclick="deleteEntity('quest', '${q.id}')">✗</button>
+                                <button class="icon-btn move" aria-label="Move Up" onclick="moveEntity('quest', '${q.id}', 'up')">▲</button>
+                                <button class="icon-btn move" aria-label="Move Down" onclick="moveEntity('quest', '${q.id}', 'down')">▼</button>
+                                <button class="icon-btn edit" aria-label="Edit Quest" style="margin-left:10px;" onclick="openEditQuest('${q.id}')">✎</button>
+                                <button class="icon-btn pause" aria-label="${q.isPaused ? 'Resume' : 'Pause'}" onclick="togglePause('quest', '${q.id}')">${q.isPaused ? '▶' : '⏸'}</button>
+                                <button class="icon-btn delete" aria-label="Delete Quest" onclick="deleteEntity('quest', '${q.id}')">✗</button>
                             </div>
                         </div>
                     `;
                     l.appendChild(li);
                 });
+                fragment.appendChild(div);
             });
+            c.appendChild(fragment);
         }
 
         // --- Comments Engine ---
@@ -973,17 +1306,25 @@
             
             if(feed.length === 0) { container.innerHTML = `<div style="text-align:center; color:var(--text-muted);">No entries found.</div>`; return; }
             
+            const fragment = document.createDocumentFragment();
             feed.forEach(c => {
                 const goal = state.goals.find(g => g.id === c.goalId);
                 const gName = goal ? `[ ${goal.name} ]` : '';
-                container.innerHTML += `
-                    <div class="feed-entry">
-                        <div class="feed-header"><span>${c.date}</span><span>${gName}</span></div>
-                        <div class="feed-quest">${c.questTitle}</div>
-                        <div class="feed-comment">${c.text.replace(/\n/g, '<br>')}</div>
-                    </div>
+                
+                const entryDiv = document.createElement('div');
+                entryDiv.className = 'feed-entry';
+                
+                const formattedTitle = formatCommentsWithTags(c.questTitle);
+                const formattedComment = formatCommentsWithTags(c.text).replace(/\n/g, '<br>');
+                
+                entryDiv.innerHTML = `
+                    <div class="feed-header"><span>${c.date}</span><span>${gName}</span></div>
+                    <div class="feed-quest">${formattedTitle}</div>
+                    <div class="feed-comment">${formattedComment}</div>
                 `;
+                fragment.appendChild(entryDiv);
             });
+            container.appendChild(fragment);
         }
 
         // --- Dashboards & Renderers ---
@@ -1053,7 +1394,8 @@
                     subquestsHTML = `<div class="subquests-container">${items}</div>`;
                 }
 
-                const mainCheckHTML = `<input type="checkbox" class="quest-checkbox ${q.type==='negative'?'negative':''}" onchange="toggleLog('${q.id}', 'toggle', '${dateStr}')" ${isChecked ? 'checked' : ''}>`;
+                const qCleanText = q.text.replace(/"/g, '&quot;');
+                const mainCheckHTML = `<input type="checkbox" class="quest-checkbox ${q.type==='negative'?'negative':''}" aria-label="${q.type==='negative' ? 'Fail' : 'Complete'} Quest: ${qCleanText}" onchange="toggleLog('${q.id}', 'toggle', '${dateStr}')" ${isChecked ? 'checked' : ''}>`;
 
                 const qStats = calculateQuestStats(q.id);
                 const pPct = (qStats.currentXP / qStats.xpReq) * 100;
@@ -1073,7 +1415,7 @@
                                             <div class="quest-text ${q.type==='negative'?'negative':''}" style="${textStrike}" onclick="toggleDesc('${q.id}')">
                                                 ${q.text} ${q.description ? '<span style="font-size:0.7rem; color:var(--text-muted);">[+]</span>' : ''}
                                             </div>
-                                            <button class="icon-btn comment-btn ${hasComment}" style="margin-left:8px;" onclick="openCommentModal('${q.id}', '${logKey}')">💬</button>
+                                            <button class="icon-btn comment-btn ${hasComment}" aria-label="Quest Journal Notes" style="margin-left:8px;" onclick="openCommentModal('${q.id}', '${logKey}')">💬</button>
                                         </div>
                                         ${subquestsHTML}
                                     </div>
@@ -1096,21 +1438,28 @@
             const container = document.getElementById(containerId); container.innerHTML = '';
             let hasActive = false;
 
+            const fragment = document.createDocumentFragment();
+
             state.goals.filter(g => !g.isPaused && g.createdAt <= dateStr).forEach(goal => {
                 const qs = state.quests.filter(q => q.goalId === goal.id && !q.isPaused && q.createdAt <= dateStr && q.frequency === targetFreq && q.type === targetType);
                 if(qs.length > 0) {
                     hasActive = true;
                     const rankClass = targetType === 'negative' ? 'negative' : '';
                     const titleColor = targetType === 'negative' ? 'color:var(--danger);' : '';
-                    container.innerHTML += `
-                        <div class="goal-group ${rankClass}">
-                            <div class="goal-header ${rankClass}"><h3 style="${titleColor}">[ ${goal.name} ]</h3></div>
-                            <ul class="list-group">${buildQuestListHTML(qs, dateStr)}</ul>
-                        </div>
+                    const goalRank = getGoalRank(goal.id, dateStr);
+                    const rankBadgeHTML = `<span class="rank-badge rank-${goalRank}" style="font-size:0.75rem; margin-left:10px; vertical-align:middle;">${goalRank}-Rank</span>`;
+                    
+                    const groupDiv = document.createElement('div');
+                    groupDiv.className = `goal-group ${rankClass}`;
+                    groupDiv.innerHTML = `
+                        <div class="goal-header ${rankClass}"><h3 style="${titleColor}">[ ${goal.name} ] ${rankBadgeHTML}</h3></div>
+                        <ul class="list-group">${buildQuestListHTML(qs, dateStr)}</ul>
                     `;
+                    fragment.appendChild(groupDiv);
                 }
             });
 
+            container.appendChild(fragment);
             document.getElementById(emptyMsgId).style.display = hasActive ? 'none' : 'block';
 
             // Independent Radar Calculation - Evaluating STRICTLY the current selected period 
@@ -1207,7 +1556,39 @@
             return new Chart(document.getElementById(canvasId).getContext('2d'), {
                 type: 'radar',
                 data: { labels: chartData.labels, datasets: [{ data: chartData.data, backgroundColor: bgColor, borderColor: mainColor, pointBackgroundColor: '#fff', borderWidth: 2 }] },
-                options: { scales: { r: { min: 0, max: 100, angleLines: { color: 'rgba(26, 54, 93, 0.8)' }, grid: { color: 'rgba(26, 54, 93, 0.8)' }, pointLabels: { color: '#e0f7fa', font: { size: 11, family: "'Orbitron', sans-serif" } }, ticks: { display: false, stepSize: 20 } } }, plugins: { legend: { display: false } }, maintainAspectRatio: false }
+                options: { 
+                    scales: { 
+                        r: { 
+                            min: 0, 
+                            max: 100, 
+                            angleLines: { color: 'rgba(26, 54, 93, 0.8)' }, 
+                            grid: { color: 'rgba(26, 54, 93, 0.8)' }, 
+                            pointLabels: { color: '#e0f7fa', font: { size: 11, family: "'Orbitron', sans-serif" } }, 
+                            ticks: { display: false, stepSize: 20 } 
+                        } 
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            enabled: true,
+                            backgroundColor: 'rgba(5, 9, 20, 0.95)',
+                            titleColor: mainColor,
+                            titleFont: { family: "'Orbitron', sans-serif", size: 12, weight: 'bold' },
+                            bodyColor: '#e0f7fa',
+                            bodyFont: { family: "'Rajdhani', sans-serif", size: 14 },
+                            borderColor: mainColor,
+                            borderWidth: 1.5,
+                            padding: 10,
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return ` Completion: ${context.parsed.r || context.raw}%`;
+                                }
+                            }
+                        }
+                    },
+                    maintainAspectRatio: false 
+                }
             });
         }
 
@@ -1219,6 +1600,8 @@
                 try {
                     const p = JSON.parse(saved); state.goals = p.goals || []; state.quests = p.quests || []; state.logs = p.logs || {};
                     state.comments = p.comments || {}; state.systemStartDate = p.systemStartDate || null;
+                    state.dayResetOffset = p.dayResetOffset || 0;
+                    state.lastExportDate = p.lastExportDate || null;
                     
                     state.quests.forEach(q => { 
                         if(q.stages) { q.subquests = q.stages; delete q.stages; }
@@ -1239,8 +1622,58 @@
                 } catch(e) {}
             }
         }
-        function clearAllData() { sysModal.show('CRITICAL WARNING', 'Wipe all data? Type "WIPE".', 'text', '', '', (v) => { if(v==='WIPE'){ state={goals:[],quests:[],logs:{},comments:{},systemStartDate:null}; saveData(); window.location.reload(); }}); }
-        function exportJSON() { const b = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" }); const url = URL.createObjectURL(b); const a = document.createElement('a'); a.href = url; a.download = `System_Backup_V16_${getTodayStr()}.json`; a.click(); }
+        function clearAllData() { sysModal.show('CRITICAL WARNING', 'Wipe all data? Type "WIPE".', 'text', '', '', (v) => { if(v==='WIPE'){ state={goals:[],quests:[],logs:{},comments:{},systemStartDate:null,dayResetOffset:0,lastExportDate:null}; saveData(); window.location.reload(); }}); }
+        
+        // --- Day Rollover & Backup Safety helpers ---
+        function updateResetOffset() {
+            state.dayResetOffset = parseInt(document.getElementById('dayResetSelect').value) || 0;
+            saveData();
+            updatePlayerXP();
+            renderActiveBoards();
+        }
+        function triggerBackupFromBanner() {
+            exportJSON();
+            closeBackupBanner();
+        }
+        function closeBackupBanner() {
+            const banner = document.getElementById('backupReminderBanner');
+            if (banner) banner.classList.add('hidden-element');
+        }
+        function checkBackupReminder() {
+            const banner = document.getElementById('backupReminderBanner');
+            const countDisp = document.getElementById('backupDaysCount');
+            if (!banner || !countDisp) return;
+            
+            const lastBackup = state.lastExportDate || state.systemStartDate || getEarliestLogDate();
+            if (!lastBackup) return;
+            
+            const last = toDateObj(lastBackup);
+            const today = toDateObj(getTodayStr());
+            const diffTime = Math.abs(today - last);
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays >= 2) {
+                countDisp.textContent = diffDays;
+                banner.classList.remove('hidden-element');
+            } else {
+                banner.classList.add('hidden-element');
+            }
+        }
+        
+        // --- Journal Tagging helper ---
+        function formatCommentsWithTags(text) {
+            if (!text) return '';
+            return text.replace(/#([a-zA-Z0-9_\-]+)/g, '<span class="journal-tag" onclick="filterByTag(\'#$1\')">#$1</span>');
+        }
+        function filterByTag(tagName) {
+            const searchInput = document.getElementById('journalSearch');
+            if (searchInput) {
+                searchInput.value = tagName;
+                renderJournal();
+            }
+        }
+
+        function exportJSON() { state.lastExportDate = getTodayStr(); saveData(); const b = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" }); const url = URL.createObjectURL(b); const a = document.createElement('a'); a.href = url; a.download = `System_Backup_V16_${getTodayStr()}.json`; a.click(); if (document.getElementById('backupReminderBanner')) document.getElementById('backupReminderBanner').classList.add('hidden-element'); }
         function importJSON() {
             const f = document.getElementById('importFile').files[0]; if(!f) return;
             const r = new FileReader(); r.onload = (e) => { try { state = JSON.parse(e.target.result); saveData(); window.location.reload(); } catch(err) { alert('Corrupted File'); } }; r.readAsText(f);
