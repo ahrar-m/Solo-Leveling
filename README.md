@@ -53,21 +53,6 @@ This repository contains the source code for a highly gamified, standalone habit
 
 
 
-## Future Scope
-- Have negative daily quests page 
-- Show ranking history (allow to keep scrolling at past weeks ranking)
-- Option to pause levelling of a particular level (even pause goals too)
-- Stages in a single Daily Quest (like sleeping for a minimum of 6 hrs is stage 1, stage 2 is 7 hrs, stage 3 is 8 hrs. Max 10 XP granted if highest stage ticked. Allow XP definition for lower stages)
-- Concept of Weekly and Monthly quests (identify best way to retain existing functionalities while adding these)
--
-
-
-## Future Scope
-- Quest comment option which can be edited, comments explorer tab
-- There seems to be an issue with daily quests with multiple stages. i want all of the subquests to be individually completeable (all complete means automatically parent quest is marked complete)
-- Recheck if all logics work as expected
-- Even retroactive task addition with stages doesnt seem to work, it adds for today instead
-
 ## Future Scope & Development Roadmap
 
 ### I. Visuals, UI, and User Experience
