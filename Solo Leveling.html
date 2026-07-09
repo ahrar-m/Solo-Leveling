@@ -565,8 +565,16 @@
         let archiveOffset = 0; 
         let tempStageCount = 0;
 
+        // --- HTML Escaping Helper ---
+        function escapeHTML(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>'"]/g, tag => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+            }[tag] || tag));
+        }
+
         // --- Date & Time Engine ---
-        function toDateObj(str) { const [y, m, d] = str.split('-'); return new Date(y, m - 1, d); }
+        function toDateObj(str) { const [y, m, d] = str.split('-'); return new Date(y, m - 1, d, 12, 0, 0, 0); }
         function toStr(dateObj) { return `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`; }
         function getAdjustedSystemDate() {
             const now = new Date();
@@ -604,18 +612,19 @@
 
         // --- Streak & Combo Engine ---
         function isDayCompleted(dateStr) {
-            const activeGoals = state.goals.filter(g => !g.isPaused && g.createdAt <= dateStr);
+            const isToday = (dateStr === getTodayStr());
+            const activeGoals = state.goals.filter(g => (isToday ? !g.isPaused : true) && g.createdAt <= dateStr);
             let checkedGoalsCount = 0;
             let completedGoalsCount = 0;
             
             activeGoals.forEach(goal => {
-                const posQs = state.quests.filter(q => q.goalId === goal.id && !q.isPaused && q.createdAt <= dateStr && q.frequency === 'daily');
+                const posQs = state.quests.filter(q => q.goalId === goal.id && (isToday ? !q.isPaused : true) && q.createdAt <= dateStr && q.frequency === 'daily');
                 
                 if (posQs.length === 0) return;
                 
                 checkedGoalsCount++;
                 
-                let posHits = 0; posQs.forEach(q => { if(isQuestHit(q, dateStr)) posHits++; });
+                let posHits = 0; posQs.forEach(q => { posHits += getQuestCompletionFraction(q, dateStr); });
                 
                 const posTarget = goal.required > 0 ? Math.min(goal.required, posQs.length) : posQs.length;
                 
@@ -630,6 +639,9 @@
 
         function calculateAllStreaks() {
             const streaks = {};
+            const hasAnyDailyQuests = state.quests.some(q => q.frequency === 'daily');
+            if (!hasAnyDailyQuests) return streaks;
+            
             const earliest = getSystemStart();
             const todayStr = getTodayStr();
             
@@ -658,6 +670,7 @@
                     }
                 }
                 curr.setDate(curr.getDate() + 1);
+                curr.setHours(12, 0, 0, 0); // reset to midday to prevent DST drift
             }
             return streaks;
         }
@@ -675,7 +688,9 @@
             if (!state.systemStartDate) { state.systemStartDate = getEarliestLogDate(); saveData(); }
             
             document.getElementById('questDatePicker').value = getTodayStr();
-            Chart.defaults.color = '#4a6b8c'; Chart.defaults.font.family = "'Rajdhani', sans-serif";
+            if (typeof Chart !== 'undefined') {
+                Chart.defaults.color = '#4a6b8c'; Chart.defaults.font.family = "'Rajdhani', sans-serif";
+            }
             
             if (document.getElementById('dayResetSelect')) {
                 document.getElementById('dayResetSelect').value = state.dayResetOffset || 0;
@@ -834,24 +849,51 @@
             
             if (q.subquests && q.subquests.length > 0) {
                 if (!Array.isArray(logVal)) return false; 
-                const allChecked = logVal.every(v => v === true);
-                return allChecked;
+                return logVal.length === q.subquests.length && logVal.every(v => v === true);
             }
 
             const isLogged = logVal === true;
             return isLogged; 
         }
 
+        function getQuestCompletionFraction(q, dateStr) {
+            let logKey = dateStr;
+            if (q.frequency === 'weekly') logKey = getWeekKey(dateStr);
+            if (q.frequency === 'monthly') logKey = getMonthKey(dateStr);
+            
+            const logEntry = state.logs[logKey];
+            if (!logEntry) return 0;
+            const logVal = logEntry[q.id];
+            if (logVal === undefined || logVal === false || logVal === -1) return 0;
+            
+            if (q.subquests && q.subquests.length > 0) {
+                if (!Array.isArray(logVal)) {
+                    return logVal === true ? 1 : 0;
+                }
+                let checkedCount = 0;
+                const len = q.subquests.length;
+                for (let i = 0; i < len; i++) {
+                    if (logVal[i] === true) checkedCount++;
+                }
+                return len > 0 ? checkedCount / len : 0;
+            }
+            
+            return logVal === true ? 1 : 0;
+        }
+
         // Dedicated strict Period Completion for isolated charts (Fixes the Daily 25% bug)
         function getGoalPeriodCompletion(goalId, targetFreq, dateStr) {
             const goal = state.goals.find(g => g.id === goalId);
-            if (!goal || goal.isPaused) return 0;
+            if (!goal) return 0;
             
-            const activeQs = state.quests.filter(q => q.goalId === goalId && !q.isPaused && q.createdAt <= dateStr && q.frequency === targetFreq);
+            const isToday = (dateStr === getTodayStr());
+            if (goal.isPaused && isToday) return 0;
+            
+            const activeQs = state.quests.filter(q => q.goalId === goalId && (isToday ? !q.isPaused : true) && q.createdAt <= dateStr && q.frequency === targetFreq);
             if (activeQs.length === 0 || goal.createdAt > dateStr) return 0;
 
             let hits = 0;
-            activeQs.forEach(q => { if(isQuestHit(q, dateStr)) hits++; });
+            activeQs.forEach(q => { hits += getQuestCompletionFraction(q, dateStr); });
             
             let target = goal.required > 0 ? Math.min(goal.required, activeQs.length) : activeQs.length;
             if (target === 0) target = 1;
@@ -862,11 +904,16 @@
 
         // Combines all frequencies for Global Ranking and Progress Comparison (Fixes Bug 4 weekly inflation)
         function getGoalCombinedWeeklyCompletion(goalId, startStr, endStr) {
-            const goal = state.goals.find(g => g.id === goalId);
-            if (!goal || goal.isPaused) return 0;
+            const allGoals = [...state.goals, ...(state.archivedGoals || [])];
+            const goal = allGoals.find(g => g.id === goalId);
+            if (!goal) return 0;
             
-            const allQs = state.quests.filter(q => q.goalId === goalId && !q.isPaused && q.createdAt <= endStr);
-            const allArchived = (state.archivedQuests || []).filter(q => q.goalId === goalId && q.createdAt <= endStr);
+            const todayStr = getTodayStr();
+            const isPastWeek = endStr < todayStr;
+            if (goal.isPaused && !isPastWeek) return 0;
+            
+            const allQs = state.quests.filter(q => q.goalId === goalId && (isPastWeek ? true : !q.isPaused) && q.createdAt <= endStr);
+            const allArchived = (state.archivedQuests || []).filter(q => q.goalId === goalId && q.createdAt <= endStr && (!q.archivedAt || q.archivedAt >= startStr));
             const aq = [...allQs, ...allArchived];
             if (aq.length === 0) return 0;
             
@@ -884,15 +931,16 @@
                 const end = toDateObj(endStr);
                 while (curr <= end) {
                     const dStr = toStr(curr);
-                    const activeDQs = dailyQs.filter(q => q.createdAt <= dStr);
+                    const activeDQs = dailyQs.filter(q => q.createdAt <= dStr && (!q.archivedAt || q.archivedAt >= dStr));
                     if (activeDQs.length > 0) {
                         let hits = 0;
-                        activeDQs.forEach(q => { if (isQuestHit(q, dStr)) hits++; });
+                        activeDQs.forEach(q => { hits += getQuestCompletionFraction(q, dStr); });
                         const target = goal.required > 0 ? Math.min(goal.required, activeDQs.length) : activeDQs.length;
                         totalDailyHits += Math.min(hits, target);
                         totalDailyTargets += target;
                     }
                     curr.setDate(curr.getDate() + 1);
+                    curr.setHours(12, 0, 0, 0); // reset to midday to prevent DST drift
                 }
                 if (totalDailyTargets > 0) {
                     sumPct += (totalDailyHits / totalDailyTargets);
@@ -902,14 +950,14 @@
             
             if (weeklyQs.length > 0) {
                 let hits = 0;
-                weeklyQs.forEach(q => { if (isQuestHit(q, startStr)) hits++; });
+                weeklyQs.forEach(q => { hits += getQuestCompletionFraction(q, startStr); });
                 sumPct += (hits / weeklyQs.length);
                 countFreqs++;
             }
             
             if (monthlyQs.length > 0) {
                 let hits = 0;
-                monthlyQs.forEach(q => { if (isQuestHit(q, startStr)) hits++; });
+                monthlyQs.forEach(q => { hits += getQuestCompletionFraction(q, startStr); });
                 sumPct += (hits / monthlyQs.length);
                 countFreqs++;
             }
@@ -1025,8 +1073,8 @@
             tempStageCount++;
             const div = document.createElement('div'); div.className = 'stage-builder-row'; div.id = `stageRow_${tempStageCount}`;
             div.innerHTML = `
-                <input type="text" placeholder="Subquest Name (e.g. Write 500 words)" value="${initText}" style="flex:2;">
-                <input type="number" placeholder="XP" value="${initXP}" style="flex:1;" min="1" max="1000">
+                <input type="text" placeholder="Subquest Name (e.g. Write 500 words)" value="${escapeHTML(initText)}" style="flex:2;">
+                <input type="number" placeholder="XP" value="${escapeHTML(initXP)}" style="flex:1;" min="1" max="1000">
                 <button class="action-btn danger-btn" style="width:auto; padding:0 10px;" onclick="this.parentElement.remove()">X</button>
             `;
             document.getElementById(containerId).appendChild(div);
@@ -1081,6 +1129,7 @@
                     if(!state.logs[k]) state.logs[k] = {};
                     state.logs[k][newId] = subquests.length > 0 ? new Array(subquests.length).fill(true) : true;
                     curr.setDate(curr.getDate() + 1);
+                    curr.setHours(12, 0, 0, 0); // reset to midday to prevent DST drift
                 }
             }
 
@@ -1105,7 +1154,7 @@
             const q = state.quests.find(x => x.id === id); if(!q) return;
             
             const gSelect = document.getElementById('editQGoal'); gSelect.innerHTML = '';
-            state.goals.forEach(g => { gSelect.innerHTML += `<option value="${g.id}" ${g.id === q.goalId ? 'selected' : ''}>${g.name}</option>`; });
+            state.goals.forEach(g => { gSelect.innerHTML += `<option value="${g.id}" ${g.id === q.goalId ? 'selected' : ''}>${escapeHTML(g.name)}</option>`; });
             
             document.getElementById('editQTitle').value = q.text;
             document.getElementById('editQDesc').value = q.description || '';
@@ -1139,11 +1188,13 @@
                     if(type === 'goal') {
                         const goal = state.goals.find(g => g.id === id);
                         if (goal) {
+                            goal.archivedAt = getTodayStr();
                             state.goals = state.goals.filter(g => g.id !== id);
                             state.archivedGoals = state.archivedGoals || [];
                             state.archivedGoals.push(goal);
                             
                             const qs = state.quests.filter(q => q.goalId === id);
+                            qs.forEach(q => { q.archivedAt = getTodayStr(); });
                             state.quests = state.quests.filter(q => q.goalId !== id);
                             state.archivedQuests = state.archivedQuests || [];
                             state.archivedQuests.push(...qs);
@@ -1151,6 +1202,7 @@
                     } else {
                         const q = state.quests.find(x => x.id === id);
                         if (q) {
+                            q.archivedAt = getTodayStr();
                             state.quests = state.quests.filter(x => x.id !== id);
                             state.archivedQuests = state.archivedQuests || [];
                             state.archivedQuests.push(q);
@@ -1190,7 +1242,7 @@
                 const div = document.createElement('div'); div.className = `goal-group ${goal.isPaused ? 'paused-item' : ''}`;
                 div.innerHTML = `
                     <div class="goal-header">
-                        <h3>${goal.isPaused ? '⏸ ' : ''}[ ${goal.name} ]</h3>
+                        <h3>${goal.isPaused ? '⏸ ' : ''}[ ${escapeHTML(goal.name)} ]</h3>
                         <div class="action-group">
                             <button class="icon-btn move" aria-label="Move Up" onclick="moveEntity('goal', '${goal.id}', 'up')">▲</button>
                             <button class="icon-btn move" aria-label="Move Down" onclick="moveEntity('goal', '${goal.id}', 'down')">▼</button>
@@ -1213,7 +1265,7 @@
                     li.innerHTML = `
                         <div class="list-item-main">
                             <div class="quest-text" style="font-size:1rem; cursor:default;">
-                                ${q.isPaused ? '⏸ ' : ''}${q.text} 
+                                ${q.isPaused ? '⏸ ' : ''}${escapeHTML(q.text)} 
                                 <span style="font-size:0.75rem; color:var(--text-muted); margin-left:5px;">(${fCap})</span>
                             </div>
                             <div class="action-group">
@@ -1268,13 +1320,13 @@
             const fragment = document.createDocumentFragment();
             feed.forEach(c => {
                 const goal = state.goals.find(g => g.id === c.goalId);
-                const gName = goal ? `[ ${goal.name} ]` : '';
+                const gName = goal ? `[ ${escapeHTML(goal.name)} ]` : '';
                 
                 const entryDiv = document.createElement('div');
                 entryDiv.className = 'feed-entry';
                 
-                const formattedTitle = formatCommentsWithTags(c.questTitle);
-                const formattedComment = formatCommentsWithTags(c.text).replace(/\n/g, '<br>');
+                const formattedTitle = formatCommentsWithTags(escapeHTML(c.questTitle));
+                const formattedComment = formatCommentsWithTags(escapeHTML(c.text)).replace(/\n/g, '<br>');
                 
                 entryDiv.innerHTML = `
                     <div class="feed-header"><span>${c.date}</span><span>${gName}</span></div>
@@ -1335,7 +1387,7 @@
                 let isChecked = false;
                 
                 if (q.subquests && q.subquests.length > 0) {
-                    isChecked = Array.isArray(logVal) && logVal.every(v => v === true);
+                    isChecked = Array.isArray(logVal) && logVal.length === q.subquests.length && logVal.every(v => v === true);
                 } else {
                     isChecked = logVal === true;
                 }
@@ -1347,13 +1399,13 @@
                         const strike = isSqChecked ? 'text-decoration: line-through; opacity: 0.6;' : '';
                         return `<label class="subquest-label">
                             <input type="checkbox" class="subquest-checkbox" onchange="toggleSubquest('${q.id}', ${idx}, '${dateStr}')" ${isSqChecked ? 'checked' : ''}>
-                            <span style="${strike}">${sq.text} <span style="font-size: 0.7rem; color: var(--primary-glow);">+${sq.xp} XP</span></span>
+                            <span style="${strike}">${escapeHTML(sq.text)} <span style="font-size: 0.7rem; color: var(--primary-glow);">+${sq.xp} XP</span></span>
                         </label>`;
                     }).join('');
                     subquestsHTML = `<div class="subquests-container">${items}</div>`;
                 }
 
-                const qCleanText = q.text.replace(/"/g, '&quot;');
+                const qCleanText = escapeHTML(q.text);
                 const mainCheckHTML = `<input type="checkbox" class="quest-checkbox" aria-label="Complete Quest: ${qCleanText}" onchange="toggleLog('${q.id}', 'toggle', '${dateStr}')" ${isChecked ? 'checked' : ''}>`;
 
                 const qStats = calculateQuestStats(q.id);
@@ -1372,7 +1424,7 @@
                                     <div style="flex-grow:1;">
                                         <div style="display:flex; align-items:center;">
                                             <div class="quest-text" style="${textStrike}" onclick="toggleDesc('${q.id}')">
-                                                ${q.text} ${q.description ? '<span style="font-size:0.7rem; color:var(--text-muted);">[+]</span>' : ''}
+                                                ${escapeHTML(q.text)} ${q.description ? '<span style="font-size:0.7rem; color:var(--text-muted);">[+]</span>' : ''}
                                             </div>
                                             <button class="icon-btn comment-btn ${hasComment}" aria-label="Quest Journal Notes" style="margin-left:8px;" onclick="openCommentModal('${q.id}', '${logKey}')">💬</button>
                                         </div>
@@ -1385,7 +1437,7 @@
                                 </div>
                             </div>
                         </div>
-                        ${q.description ? `<div id="desc_${q.id}" class="quest-desc-box">${q.description}</div>` : ''}
+                        ${q.description ? `<div id="desc_${q.id}" class="quest-desc-box">${escapeHTML(q.description)}</div>` : ''}
                     </li>
                 `;
             });
@@ -1399,8 +1451,10 @@
 
             const fragment = document.createDocumentFragment();
 
-            state.goals.filter(g => !g.isPaused && g.createdAt <= dateStr).forEach(goal => {
-                const qs = state.quests.filter(q => q.goalId === goal.id && !q.isPaused && q.createdAt <= dateStr && q.frequency === targetFreq);
+            const isToday = (dateStr === getTodayStr());
+
+            state.goals.filter(g => (isToday ? !g.isPaused : true) && g.createdAt <= dateStr).forEach(goal => {
+                const qs = state.quests.filter(q => q.goalId === goal.id && (isToday ? !q.isPaused : true) && q.createdAt <= dateStr && q.frequency === targetFreq);
                 if(qs.length > 0) {
                     hasActive = true;
                     const goalRank = getGoalRank(goal.id, dateStr);
@@ -1409,7 +1463,7 @@
                     const groupDiv = document.createElement('div');
                     groupDiv.className = `goal-group`;
                     groupDiv.innerHTML = `
-                        <div class="goal-header"><h3>[ ${goal.name} ] ${rankBadgeHTML}</h3></div>
+                        <div class="goal-header"><h3>[ ${escapeHTML(goal.name)} ] ${rankBadgeHTML}</h3></div>
                         <ul class="list-group">${buildQuestListHTML(qs, dateStr)}</ul>
                     `;
                     fragment.appendChild(groupDiv);
@@ -1420,11 +1474,11 @@
             document.getElementById(emptyMsgId).style.display = hasActive ? 'none' : 'block';
 
             const labels = []; const data = [];
-            state.goals.filter(g => !g.isPaused && g.createdAt <= dateStr).forEach(goal => {
-                const hasQs = state.quests.some(q => q.goalId === goal.id && !q.isPaused && q.createdAt <= dateStr && q.frequency === targetFreq);
+            state.goals.filter(g => (isToday ? !g.isPaused : true) && g.createdAt <= dateStr).forEach(goal => {
+                const hasQs = state.quests.some(q => q.goalId === goal.id && (isToday ? !q.isPaused : true) && q.createdAt <= dateStr && q.frequency === targetFreq);
                 if(hasQs) {
                     const pct = getGoalPeriodCompletion(goal.id, targetFreq, dateStr);
-                    labels.push(`${goal.name} (${pct}%)`); data.push(pct);
+                    labels.push(`${escapeHTML(goal.name)} (${pct}%)`); data.push(pct);
                 }
             });
             if(labels.length === 0) { labels.push('No Active Stats'); data.push(0); }
@@ -1492,11 +1546,19 @@
             document.getElementById('archiveDateLabel').textContent = archiveOffset === 0 ? "Current Week" : `Week of ${targetWeek.start}`;
             
             const tBody = document.getElementById('rankTableBody'); tBody.innerHTML = '';
-            state.goals.filter(g => !g.isPaused).forEach(goal => {
+            
+            const allGoals = [...state.goals, ...(state.archivedGoals || [])];
+            const activeDuringWeek = allGoals.filter(g => 
+                g.createdAt <= targetWeek.end && 
+                (!g.archivedAt || g.archivedAt >= targetWeek.start) &&
+                (!g.isPaused || targetWeek.end < today)
+            );
+            
+            activeDuringWeek.forEach(goal => {
                 const targetRank = getGoalRank(goal.id, targetWeek.end); 
                 const prevRank = getGoalRank(goal.id, getShiftedWeekBounds(targetWeek.end, -7).end);
                 tBody.innerHTML += `<tr>
-                    <td style="font-weight:bold;">${goal.name}</td>
+                    <td style="font-weight:bold;">${escapeHTML(goal.name)}</td>
                     <td><span class="rank-badge rank-${targetRank}" style="margin:0;">[ ${targetRank}-Rank ]</span></td>
                     <td><span class="rank-badge rank-${prevRank}" style="margin:0;">[ ${prevRank}-Rank ]</span></td>
                 </tr>`;
@@ -1504,6 +1566,19 @@
         }
 
         function createRadarChart(canvasId, chartData) {
+            if (typeof Chart === 'undefined') {
+                const canvas = document.getElementById(canvasId);
+                if (canvas) {
+                    const ctx = canvas.getContext('2d');
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillStyle = '#8da4c4';
+                    ctx.font = '14px Rajdhani';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('[ Charts Unavailable Offline ]', canvas.width / 2, canvas.height / 2);
+                }
+                return null;
+            }
             const mainColor = '#00f0ff';
             const bgColor = 'rgba(0, 240, 255, 0.25)';
             return new Chart(document.getElementById(canvasId).getContext('2d'), {
@@ -1585,7 +1660,7 @@
                 } catch(e) {}
             }
         }
-        function clearAllData() { sysModal.show('CRITICAL WARNING', 'Wipe all data? Type "WIPE".', 'text', '', '', (v) => { if(v==='WIPE'){ state={goals:[],quests:[],archivedGoals:[],archivedQuests:[],logs:{},comments:{},systemStartDate:null,dayResetOffset:0,lastExportDate:null}; saveData(); window.location.reload(); }}); }
+        function clearAllData() { sysModal.show('CRITICAL WARNING', 'Wipe all data? Type "WIPE".', 'text', '', '', (v) => { if(v && v.trim().toUpperCase() === 'WIPE'){ localStorage.clear(); state={goals:[],quests:[],archivedGoals:[],archivedQuests:[],logs:{},comments:{},systemStartDate:null,dayResetOffset:0,lastExportDate:null}; saveData(); window.location.reload(); }}); }
         
         // --- Day Rollover & Backup Safety helpers ---
         function updateResetOffset() {
